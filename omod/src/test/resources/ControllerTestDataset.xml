@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<dataset>
+
+	<person uuid="1115086f-b525-4199-afb9-729d9088ae89" person_id="100000" date_created="2020-01-21 00:00:00.0" voided="0" dead="0"/>
+	
+	<person uuid="5e81906d-84d2-45ed-84da-912109977026" person_id="100001" gender="M" birthdate="1965-09-30" birthtime="12:34:56" date_created="2020-01-21 00:00:00.0" voided="0" dead="0"/>
+
+    <person_name uuid="f0e0225d-77f7-46f3-b2dd-9994bbb635ec" person_name_id="10" person_id="100001" given_name="Bilbo Odilon"  family_name="Baggins" date_created="2020-01-21 00:00:00.0" voided="0"/>
+
+	<patient patient_id="100000" date_created="2020-01-21 00:00:00.0" voided="0"/>
+	<patient patient_id="100001" date_created="2014-01-09 00:00:00.0" voided="0"/>
+
+	<patient_identifier patient_identifier_id="100001" patient_id="100001" identifier="100001" identifier_type="2" preferred="0" creator="1" uuid="E866EE0E-528D-48C3-AC5B-9D1128B9683C" date_created="2020-01-21 00:00:00.0" voided="0"/>
+
+	<encounter_type encounter_type_id="111000" name="test.encounterNameTranslation" creator="1" retired="0" date_created="2020-01-21 00:00:00.0" uuid="188c8aee-f593-4447-afd1-406df547569a"/>
+
+	<visit_type visit_type_id="144000" name="test.visitNameTranslation" creator="1" retired="0" date_created="2020-01-21 00:00:00.0"/>
+
+	<!-- table visit column uuid can be null in the db, but shouldnt be for patient history report -->
+	<!-- missing uuid causes npe in reporting module, erroneously catches and leads to bad PDF generation (via row.getColumnValue()-->
+	<visit visit_id="133000" visit_type_id="144000" patient_id="100000" date_started="2020-01-21 00:00:00.0" creator="1" voided="0" date_created="2020-01-21 00:00:00.0" uuid="892201df-3b57-4e63-9910-610ca45d351a"/>
+
+	<!-- visit id is not required! but patient summary fails without a parent visit for an encounter -->
+	<encounter encounter_id="122000" patient_id="100000" encounter_type="111000" visit_id="133000" creator="1" voided="0" encounter_datetime="2020-01-21 00:00:00.0" date_created="2020-01-21 00:00:00.0" uuid="05fec846-fd06-494a-84ba-c833fd137c80"/>
+
+</dataset>

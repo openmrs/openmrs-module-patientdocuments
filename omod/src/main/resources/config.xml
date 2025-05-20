@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<module configVersion="1.2">
+
+	<!-- Base Module Properties -->
+	<id>@MODULE_ID@</id>
+	<name>@MODULE_NAME@</name>
+	<version>@MODULE_VERSION@.${revisionNumber}</version>
+	<package>@MODULE_PACKAGE@</package>
+	<author>${project.parent.organization.name}</author>
+	<description>${project.parent.description}</description>
+
+	<activator>@MODULE_PACKAGE@.PatientDocumentsActivator</activator>
+
+	<require_version>${openmrsPlatformVersion}</require_version>
+
+	<require_modules>
+		<require_module version="${reportingVersion}">
+			org.openmrs.module.reporting
+		</require_module>
+		<require_module version="${initializerVersion}">
+			org.openmrs.module.initializer
+		</require_module>
+		<require_module version="${patientsummaryVersion}">
+			org.openmrs.module.patientsummary
+		</require_module>
+	</require_modules>
+
+	<messages>
+		<lang>en</lang>
+		<file>messages.properties</file>
+	</messages>
+
+	<!-- Required Privileges -->
+	<privilege>
+		<name>App: Can View Patient Identifier Sticker Report</name>
+		<description>Allows user to access the patient identifier sticker report.</description>
+	</privilege>
+	<!-- /Required Privileges -->
+
+	<!-- Conditional Resources -->
+	
+	<!-- /Conditional Resources -->
+
+</module>

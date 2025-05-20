@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE hibernate-configuration PUBLIC
+"-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-configuration-3.0.dtd">
+
+<hibernate-configuration>
+    <session-factory>
+        <!-- Reporting -->
+        <mapping resource="ReportDesign.hbm.xml"/>
+        <mapping resource="ReportRequest.hbm.xml"/>
+        <!-- emrapi-condition-list -->
+        <mapping resource="Condition.hbm.xml"/>
+        <mapping resource="Appointment.hbm.xml"/>
+        <mapping resource="AppointmentAudit.hbm.xml"/>
+        <mapping resource="ServiceWeeklyAvailability.hbm.xml"/>
+        <mapping resource="AppointmentRecurringPattern.hbm.xml"/>
+
+        <mapping resource="AppointmentServiceDefinition.hbm.xml"/>
+        <mapping resource="AppointmentServiceType.hbm.xml"/>
+        <mapping resource="Speciality.hbm.xml"/>
+        <mapping resource="AppointmentProvider.hbm.xml"/>
+
+    </session-factory>
+</hibernate-configuration>

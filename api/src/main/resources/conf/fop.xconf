@@ -1,0 +1,26 @@
+<fop version="1.0">
+
+  <!-- Strict user configuration -->
+  <strict-configuration>true</strict-configuration>
+
+  <!-- Strict FO validation -->
+  <strict-validation>true</strict-validation>
+
+  <!-- Base URL for resolving relative URLs -->
+  <base>./</base>
+
+  <!-- Font Base URL for resolving relative font URLs -->
+  <renderers>
+    <renderer mime="application/pdf">
+      <!-- Font configuration -->
+      <fonts>    
+        <font kerning="yes" embed-url="./NotoSansArabic-Regular.ttf">
+          <font-triplet name="Noto Sans Arabic" style="normal" weight="normal"/>
+        </font>
+        <font kerning="yes" embed-url="./NotoSansArabic-ExtraBold.ttf">
+          <font-triplet name="Noto Sans Arabic Bold" style="normal" weight="900"/>
+        </font>
+      </fonts> 
+    </renderer>
+  </renderers>
+</fop>

@@ -1,0 +1,200 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.openmrs.maven.parents</groupId>
+		<artifactId>maven-parent-openmrs-module</artifactId>
+		<version>1.1.1</version>
+	</parent>
+
+	<groupId>org.openmrs.module</groupId>
+	<artifactId>patientdocuments</artifactId>
+	<version>1.0.0-SNAPSHOT</version>
+	<packaging>pom</packaging>
+	<name>Patient Documents</name>
+	<description>Patient Identifier Sticker reports for OpenMRS that can be activated or deactivated</description>
+
+	<developers>
+		<developer>
+			<name>jnsereko</name>
+		</developer>
+	</developers>
+
+	<organization>
+        <name>OpenMRS</name>
+        <url>http://openmrs.org</url>
+    </organization>
+    
+	<scm>
+		<connection>scm:git:git@github.com:openmrs/openmrs-module-patientdocuments.git</connection>
+		<developerConnection>scm:git:git@github.com:openmrs/openmrs-module-patientdocuments.git</developerConnection>
+		<url>https://github.com/openmrs/openmrs-module-patientdocuments/</url>
+	</scm>
+
+	<modules>
+		<module>api</module>
+		<module>omod</module>
+	</modules>
+
+	<properties>
+		<!-- override old openmrs-sdk maven parent pom properties -->
+		<javaCompilerSource>1.8</javaCompilerSource>
+		<javaCompilerTarget>1.8</javaCompilerTarget>
+		<openmrsPlatformVersion>2.0.0</openmrsPlatformVersion>
+		<openmrsPlatformToolsVersion>2.0.0</openmrsPlatformToolsVersion>
+		<reportingVersion>1.21.0</reportingVersion>
+		<patientsummaryVersion>2.2.0</patientsummaryVersion>
+		<reportingcompatibilityVersion>2.0.4</reportingcompatibilityVersion>
+		<emrapiVersion>1.16</emrapiVersion>
+		<calculationVersion>1.1</calculationVersion>
+		<serialization.xstreamVersion>0.2.11</serialization.xstreamVersion>
+		<providermanagementVersion>2.2</providermanagementVersion>
+		<idgenVersion>4.3</idgenVersion>
+		<initializerVersion>2.1.0</initializerVersion>
+		<appointmentsVersion>1.4.0</appointmentsVersion>
+		<openmrsTestutilsVersion>1.3</openmrsTestutilsVersion>
+		<openpdfVersion>1.3.11</openpdfVersion>
+		<mysqlTestContainerVersion>1.15.2</mysqlTestContainerVersion>
+	</properties>
+
+	<dependencies>
+
+		<dependency>
+			<groupId>org.openmrs.module</groupId>
+			<artifactId>reporting-api</artifactId>
+			<version>${reportingVersion}</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.openmrs.module</groupId>
+			<artifactId>patientsummary-api</artifactId>
+			<version>${patientsummaryVersion}</version>
+			<type>jar</type>
+			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.openmrs.module</groupId>
+			<artifactId>reporting-api-2.0</artifactId>
+			<version>${reportingVersion}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.openmrs.module</groupId>
+			<artifactId>reporting-api-tests</artifactId>
+			<version>${reportingVersion}</version>
+			<type>test-jar</type>
+			<scope>test</scope>
+		</dependency>
+		
+		<dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mysql</artifactId>
+            <version>${mysqlTestContainerVersion}</version>
+            <scope>test</scope>
+        </dependency>
+
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.22.1</version>
+				<configuration>
+					<reuseForks>false</reuseForks>
+					<!-- prevent the annoying ForkedBooter process from stealing window focus on Mac OS -->
+					<argLine>-Djava.awt.headless=true</argLine>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>net.revelc.code.formatter</groupId>
+				<artifactId>formatter-maven-plugin</artifactId>
+				<version>2.10.0</version>
+				<executions>
+					<execution>
+						<phase>compile</phase>
+						<goals>
+							<goal>format</goal>
+						</goals>
+						<configuration>
+							<directories>
+								<directory>.</directory>
+							</directories>
+							<configFile>eclipse/OpenMRSFormatter.xml</configFile>
+							<includes>
+								<include>**/*.java</include>
+								<include>**/*.json</include>
+							</includes>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>net.revelc.code.formatter</groupId>
+					<artifactId>formatter-maven-plugin</artifactId>
+					<dependencies>
+						<dependency>
+							<groupId>org.openmrs.tools</groupId>
+							<artifactId>openmrs-tools</artifactId>
+							<version>${openmrsPlatformVersion}</version>
+						</dependency>
+					</dependencies>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+	</build>
+
+	<repositories>
+		<repository>
+			<id>openmrs-repo</id>
+			<name>OpenMRS Nexus Repository</name>
+			<url>https://mavenrepo.openmrs.org/nexus/content/repositories/public</url>
+		</repository>
+		<repository>
+			<id>central</id>
+			<name>Maven Repository Switchboard</name>
+			<layout>default</layout>
+			<url>https://repo1.maven.org/maven2</url>
+		</repository>
+		<repository>
+			<id>sonatype-nexus-snapshots</id>
+			<name>Sonatype Nexus Snapshots</name>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>interval:10080</updatePolicy>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>sonatype-nexus-releases</id>
+			<name>Sonatype Nexus Snapshots</name>
+			<url>https://oss.sonatype.org/content/repositories/releases</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
+	<pluginRepositories>
+		<pluginRepository>
+			<id>openmrs-repo</id>
+			<name>OpenMRS Nexus Repository</name>
+			<url>https://mavenrepo.openmrs.org/nexus/content/repositories/public</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</pluginRepository>
+	</pluginRepositories>
+</project>

@@ -13,6 +13,10 @@
 	<name>Patient Documents API</name>
 	<description>API project for Patient Documents</description>
 
+	<properties>
+        <icu4j.version>74.2</icu4j.version>
+    </properties>
+
 	<dependencies>
 		<!-- Begin OpenMRS core -->
 		<dependency>
@@ -110,7 +114,7 @@
 		<dependency>
 			<groupId>org.apache.xmlgraphics</groupId>
 			<artifactId>fop</artifactId>
-			<version>1.0</version>
+			<version>2.9</version>
 			<type>jar</type>
 			<exclusions>
 				<exclusion>
@@ -135,7 +139,7 @@
 		<dependency>
 			<groupId>org.apache.pdfbox</groupId>
 			<artifactId>pdfbox</artifactId>
-			<version>1.8.16</version>
+			<version>2.0.28</version>
 			<type>jar</type>
 		</dependency>
 
@@ -184,10 +188,42 @@
 			<scope>test</scope>
 		</dependency>
 
+        <!-- ICU4J Core Library -->
+        <dependency>
+            <groupId>com.ibm.icu</groupId>
+            <artifactId>icu4j</artifactId>
+            <version>${icu4j.version}</version>
+        </dependency>
+        
+        <!-- ICU4J Bidirectional Text Support -->
+        <dependency>
+            <groupId>com.ibm.icu</groupId>
+            <artifactId>icu4j-charset</artifactId>
+            <version>${icu4j.version}</version>
+        </dependency>
+
+		<dependency>
+			<groupId>org.apache.avalon.framework</groupId>
+			<artifactId>avalon-framework-impl</artifactId>
+			<version>4.3.1</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.avalon.framework</groupId>
+			<artifactId>avalon-framework-api</artifactId>
+			<version>4.3.1</version>
+		</dependency>
+
 		<dependency>
 			<groupId>net.sf.barcode4j</groupId>
 			<artifactId>barcode4j</artifactId>
 			<version>2.1</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.apache.avalon.framework</groupId>
+					<artifactId>avalon-framework-impl</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<dependency>
@@ -198,6 +234,10 @@
 				<exclusion>
 					<groupId>org.apache.xmlgraphics</groupId>
 					<artifactId>fop</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.avalon.framework</groupId>
+					<artifactId>avalon-framework-impl</artifactId>
 				</exclusion>
 			</exclusions>
 		</dependency>

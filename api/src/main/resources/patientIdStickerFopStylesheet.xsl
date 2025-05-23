@@ -47,7 +47,7 @@
             <xsl:when test="/patientIdStickers/@label-font-family">
                 <xsl:value-of select="/patientIdStickers/@label-font-family"/>
             </xsl:when>
-            <xsl:otherwise>Noto Sans Arabic</xsl:otherwise>
+            <xsl:otherwise>IBM Plex Sans Arabic</xsl:otherwise>
         </xsl:choose>
     </xsl:variable>
     
@@ -56,7 +56,7 @@
             <xsl:when test="/patientIdStickers/@value-font-family">
                 <xsl:value-of select="/patientIdStickers/@value-font-family"/>
             </xsl:when>
-            <xsl:otherwise>Noto Sans Arabic Bold</xsl:otherwise>
+            <xsl:otherwise>IBM Plex Sans Arabic Bold</xsl:otherwise>
         </xsl:choose>
     </xsl:variable>
 

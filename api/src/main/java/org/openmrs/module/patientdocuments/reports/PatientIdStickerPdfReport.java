@@ -7,7 +7,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.io.File;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import javax.xml.transform.OutputKeys;
@@ -18,13 +24,14 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.sax.SAXResult;
 import javax.xml.transform.stream.StreamSource;
 
-import org.apache.avalon.framework.configuration.Configuration;
-import org.apache.avalon.framework.configuration.ConfigurationException;
-import org.apache.avalon.framework.configuration.DefaultConfigurationBuilder;
+import org.apache.fop.configuration.Configuration;
+import org.apache.fop.configuration.ConfigurationException;
+import org.apache.fop.configuration.DefaultConfigurationBuilder;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.fop.apps.FOUserAgent;
 import org.apache.fop.apps.Fop;
 import org.apache.fop.apps.FopFactory;
+import org.apache.fop.apps.FopFactoryBuilder;
 import org.apache.fop.apps.MimeConstants;
 import org.openmrs.Encounter;
 import org.openmrs.Patient;
@@ -33,11 +40,16 @@ import org.openmrs.api.context.Context;
 import org.openmrs.api.context.ContextAuthenticationException;
 import org.openmrs.module.patientdocuments.PatientDocumentsConstants;
 import org.openmrs.module.patientdocuments.common.PatientDocumentsPrivilegeConstants;
+import org.openmrs.module.patientdocuments.renderer.PatientIdStickerXmlReportRenderer;
 import org.openmrs.module.patientsummary.PatientSummaryResult;
 import org.openmrs.module.patientsummary.PatientSummaryTemplate;
 import org.openmrs.module.patientsummary.api.PatientSummaryService;
+import org.openmrs.module.reporting.dataset.DataSet;
+import org.openmrs.module.reporting.evaluation.EvaluationContext;
+import org.openmrs.module.reporting.evaluation.EvaluationException;
 import org.openmrs.module.reporting.evaluation.context.EncounterEvaluationContext;
 import org.openmrs.module.reporting.query.encounter.EncounterIdSet;
+import org.openmrs.module.reporting.report.ReportData;
 import org.openmrs.module.reporting.report.ReportDesign;
 import org.openmrs.module.reporting.report.service.ReportService;
 import org.openmrs.util.OpenmrsClassLoader;
@@ -50,86 +62,61 @@ import org.xml.sax.SAXException;
 public class PatientIdStickerPdfReport {
 	
 	@Autowired
-	@Qualifier("patientsummaryPatientSummaryService")
-	private PatientSummaryService pss;
-	
-	@Autowired
-	@Qualifier("reportingReportService")
 	private ReportService rs;
 	
 	@Autowired
-	@Qualifier("encounterService")
-	private EncounterService es;
+	private PatientIdStickerDataSetEvaluatorImpl evaluator;
 	
 	/**
-	 * Renders the PDF bytes for the patient history. Specifying the patient requires the ad-hoc
-	 * privilege since it is assumed that possibly the whole patient history is being fetched.
+	 * Renders the PDF bytes for the patient ID sticker.
 	 * 
-	 * @param patient The patient for which the history is to be reported.
-	 * @param encounters The encounters to be reported.
+	 * @param patient The patient for which the ID sticker is to be generated.
 	 * @return The PDF bytes.
 	 * @throws IOException
 	 * @throws SAXException
 	 * @throws ConfigurationException
+	 * @throws EvaluationException
+	 * @throws URISyntaxException
 	 */
-	public byte[] getBytes(Patient patient, Set<Encounter> encounters) throws ContextAuthenticationException,
-	        IllegalArgumentException, TransformerException, SAXException, IOException, ConfigurationException {
+	public byte[] getBytes(Patient patient)
+	        throws ContextAuthenticationException, IllegalArgumentException, TransformerException, SAXException, IOException,
+	        ConfigurationException, EvaluationException, URISyntaxException {
 		
-		EncounterEvaluationContext context = new EncounterEvaluationContext();
-		Integer patientId = validateAndGetPatientId(patient, encounters);
-		
-		if (!CollectionUtils.isEmpty(encounters)) {
-			Set<Integer> encounterIds = new HashSet<>();
-			encounters.forEach(e -> encounterIds.add(e.getId()));
-			EncounterIdSet encIdSet = new EncounterIdSet(encounterIds);
-			context.addParameterValue("encounterIds", encIdSet);
-			context.setBaseEncounters(encIdSet);
+		// Validate patient and check privileges
+		Context.requirePrivilege(PatientDocumentsPrivilegeConstants.VIEW_PATIENT_ID_STICKER);
+		if (patient == null) {
+			throw new IllegalArgumentException("Patient cannot be null");
 		}
 		
-		ReportDesign reportDesign = rs.getReportDesignByUuid(REPORT_DESIGN_UUID);
-		PatientSummaryTemplate template = pss.getPatientSummaryTemplate(reportDesign.getId());
-		PatientSummaryResult result = pss.evaluatePatientSummaryTemplate(template, patientId, context);
+		// Create evaluation context with patient UUID
+		EvaluationContext context = new EvaluationContext();
+		context.addParameterValue("patientUuid", patient.getUuid());
 		
-		StreamSource xmlSourceStream = new StreamSource(new ByteArrayInputStream(result.getRawContents()));
+		// Get report design
+		ReportDesign reportDesign = rs.getReportDesignByUuid(REPORT_DESIGN_UUID);
+		
+		// Create and evaluate dataset definition
+		PatientIdStickerDataSetDefinition dsd = new PatientIdStickerDataSetDefinition();
+		DataSet dataSet = (DataSet) evaluator.evaluate(dsd, context);
+		// Create report data
+		ReportData reportData = new ReportData();
+		Map<String, DataSet> dataSets = new HashMap<>();
+		dataSets.put("fields", dataSet);
+		reportData.setDataSets(dataSets);
+		
+		// Create XML renderer and get XML content
+		PatientIdStickerXmlReportRenderer renderer = new PatientIdStickerXmlReportRenderer();
+		ByteArrayOutputStream xmlOutputStream = new ByteArrayOutputStream();
+		renderer.render(reportData, null, xmlOutputStream);
+		
+		// Transform XML to PDF using XSL
+		StreamSource xmlSourceStream = new StreamSource(new ByteArrayInputStream(xmlOutputStream.toByteArray()));
 		StreamSource xslTransformStream = new StreamSource(
 		        OpenmrsClassLoader.getInstance().getResourceAsStream(PatientDocumentsConstants.PATIENT_ID_STICKER_XSL_PATH));
 		
 		ByteArrayOutputStream outStream = new ByteArrayOutputStream();
 		writeToOutputStream(xmlSourceStream, xslTransformStream, outStream);
 		return outStream.toByteArray();
-	}
-	
-	private Integer validateAndGetPatientId(Patient patient, Set<Encounter> encounters) {
-		Integer patientId = null;
-		if (patient != null) {
-			Context.requirePrivilege(PatientDocumentsPrivilegeConstants.VIEW_PATIENT_ID_STICKER);
-			patientId = patient.getId();
-		}
-		
-		if (!CollectionUtils.isEmpty(encounters)) {
-			Set<Integer> patientIds = new HashSet<>();
-			encounters.forEach(e -> patientIds.add(e.getPatient().getId()));
-			
-			if (patientIds.size() > 1) {
-				throw new IllegalArgumentException(
-				        "The report could not be run because not all encounters belong to the same patient.");
-			}
-			
-			if (patientId != null) {
-				if (!patientIds.contains(patientId)) {
-					throw new IllegalArgumentException(
-					        "The report could not be run because the encounters do not correspond to the specified patient: '"
-					                + patient.getUuid() + "'");
-				}
-			} else {
-				patientId = patientIds.iterator().next();
-			}
-		} else if (patient == null) {
-			throw new IllegalArgumentException(
-			        "The report could not be run because neither the patient nor the encounters were provided.");
-		}
-		
-		return patientId;
 	}
 	
 	/**
@@ -143,18 +130,19 @@ public class PatientIdStickerPdfReport {
 	 * @throws IOException
 	 * @throws SAXException
 	 * @throws ConfigurationException
+	 * @throws URISyntaxException
 	 */
 	protected void writeToOutputStream(StreamSource xmlSourceStream, StreamSource xslTransformStream, OutputStream outStream)
-	        throws TransformerException, SAXException, IOException, ConfigurationException {
-		// Get Fop configuration file
+	        throws TransformerException, SAXException, IOException, ConfigurationException, URISyntaxException {
+		InputStream fopConfigStream = OpenmrsClassLoader.getInstance().getResourceAsStream("conf/fop.xconf.xml");
+		URI fontBaseUri = OpenmrsClassLoader.getInstance().getResource("fonts").toURI();
 		DefaultConfigurationBuilder cfgBuilder = new DefaultConfigurationBuilder();
-		InputStream fopConfigStream = OpenmrsClassLoader.getInstance().getResourceAsStream("conf/fop.xconf");
 		Configuration cfg = cfgBuilder.build(fopConfigStream);
 		
+		FopFactoryBuilder fopFactoryBuilder = new FopFactoryBuilder(fontBaseUri).setConfiguration(cfg);
+		
 		// Step 1: Construct a FopFactory
-		FopFactory fopFactory = FopFactory.newInstance();
-		fopFactory.getFontManager().setFontBaseURL(OpenmrsClassLoader.getInstance().getResource("fonts").toString());
-		fopFactory.setUserConfig(cfg);
+		FopFactory fopFactory = fopFactoryBuilder.build();
 		FOUserAgent foUserAgent = fopFactory.newFOUserAgent();
 		
 		// Step 2: Construct fop with desired output format

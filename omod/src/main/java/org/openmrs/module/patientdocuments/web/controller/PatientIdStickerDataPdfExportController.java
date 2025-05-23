@@ -50,7 +50,7 @@ public class PatientIdStickerDataPdfExportController {
 		response.addHeader("Content-Disposition", contentDisposition + "; filename=" + PATIENT_ID_STICKER_ID + ".pdf");
 		
 		try {
-			byte[] pdfBytes = pdfReport.getBytes(patient, null);
+			byte[] pdfBytes = pdfReport.getBytes(patient);
 			response.setContentLength(pdfBytes.length);
 			response.getOutputStream().write(pdfBytes);
 			response.getOutputStream().flush();
@@ -61,7 +61,7 @@ public class PatientIdStickerDataPdfExportController {
 		}
 	}
 	
-	@RequestMapping(value = ROOT_URL + "/" + PATIENT_ID_STICKER_ID)
+	@RequestMapping(value = "/module/commonreports" + "/" + PATIENT_ID_STICKER_ID)
 	public void getPatientIdSticker(ModelMap model, HttpServletRequest request, HttpServletResponse response,
 	        @RequestParam(value = "patientUuid") String patientUuid,
 	        @RequestParam(value = "inline", required = false, defaultValue = "true") boolean inline) {

@@ -50,10 +50,5 @@ public class PatientDocumentsConstants {
 	/**
 	 * The path to the style sheet for Patient History reports.
 	 */
-	public static final String PATIENT_HISTORY_XSL_PATH = "patientHistoryFopStylesheet.xsl";
-	
-	/**
-	 * The path to the style sheet for Patient History reports.
-	 */
 	public static final String PATIENT_ID_STICKER_XSL_PATH = "patientIdStickerFopStylesheet.xsl";
 }

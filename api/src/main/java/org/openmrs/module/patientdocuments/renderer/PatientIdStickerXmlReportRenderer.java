@@ -30,6 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -59,14 +60,16 @@ import org.openmrs.module.reporting.report.renderer.ReportDesignRenderer;
 import org.openmrs.module.reporting.report.renderer.ReportRenderer;
 import org.openmrs.module.reporting.serializer.ReportingSerializer;
 import org.openmrs.serialization.SerializationException;
+import org.springframework.stereotype.Component;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import com.thoughtworks.xstream.XStream;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * ReportRenderer that renders to a default XML format
  */
+@Component
 @Handler
 @Localized("reporting.XmlReportRenderer")
 public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
@@ -129,34 +132,6 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 	
 	@Override
 	public void render(ReportData results, String argument, OutputStream out) throws IOException, RenderingException {
-		
-		// - - - - - - - - - - - - - - - - - - - - - - - -
-		// TODO This should go eventually.
-		// - - - - - - - - - - - - - - - - - - - - - - - -
-		if (false == StringUtils.equals(argument, "in_tests")) {
-			
-			// Marhsalling using Xstream directly
-			try {
-				File xmlFile = File.createTempFile("sampleReportData_Xstream_", ".xml");
-				BufferedWriter outWriter = new BufferedWriter(new FileWriter(xmlFile));
-				XStream xstream = new XStream();
-				xstream.toXML(results, outWriter);
-			}
-			catch (IOException e) {
-				System.out.println("IOException Occured" + e.getMessage());
-			}
-			
-			// Marhsalling using ReportingSerializer
-			try {
-				File xmlFile = File.createTempFile("sampleReportData_ReportingSerializer_", ".xml");
-				ReportingSerializer serializer = new ReportingSerializer();
-				serializer.serializeToStream(results, new FileOutputStream(xmlFile));
-			}
-			catch (SerializationException e) {
-				System.out.println("SerializationException Occured" + e.getMessage());
-			}
-		}
-		
 		DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
 		DocumentBuilder docBuilder;
 		try {
@@ -332,75 +307,126 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 	private void processDataSetFields(ReportData results, Document doc, Element templatePIDElement) {
 		String dataSetKey = DATASET_KEY_STICKER_FIELDS;
 		String ATTR_LABEL = "label";
+		
 		if (results.getDataSets().containsKey(dataSetKey)) {
 			DataSet dataSet = results.getDataSets().get(dataSetKey);
 			Element fields = doc.createElement("fields");
 			templatePIDElement.appendChild(fields);
 			
-			String barcodeValue = null;
-			String firstName = null;
-			String lastName = null;
-			
 			MessageSourceService i18nTranslator = Context.getMessageSourceService();
-			String firstNameKey = i18nTranslator.getMessage("patientdocuments.patientIdSticker.fields.firstname");
-			String lastNameKey = i18nTranslator.getMessage("patientdocuments.patientIdSticker.fields.lastname");
 			String patientIdKey = i18nTranslator.getMessage("patientdocuments.patientIdSticker.fields.identifier");
 			String patientSecondaryIdKey = i18nTranslator
 			        .getMessage("patientdocuments.patientIdSticker.fields.secondaryIdentifier");
 			String patientNameKey = i18nTranslator.getMessage("patientdocuments.patientIdSticker.fields.patientname");
+			String genderKey = i18nTranslator.getMessage("patientdocuments.patientIdSticker.fields.gender");
+			String dobKey = i18nTranslator.getMessage("patientdocuments.patientIdSticker.fields.dob");
+			String ageKey = i18nTranslator.getMessage("patientdocuments.patientIdSticker.fields.age");
+			String addressKey = i18nTranslator.getMessage("patientdocuments.patientIdSticker.fields.fulladdress");
 			
 			for (DataSetRow row : dataSet) {
-				for (DataSetColumn column : dataSet.getMetaData().getColumns()) {
-					String columnLabel = i18nTranslator.getMessage(column.getLabel());
-					String strValue = getStringValue(row, column);
-					
-					if (columnLabel.equals(firstNameKey)) {
-						firstName = strValue;
-						continue;
-					} else if (columnLabel.equals(lastNameKey)) {
-						lastName = strValue;
-						continue;
-					}
-					
-					if (columnLabel.equals(patientIdKey)) {
-						barcodeValue = strValue;
-					}
-					
-					if (columnLabel.equals(patientSecondaryIdKey) && !isNotNullOrEmpty(strValue)) {
-						continue;
-					}
-					
-					Element fieldData = doc.createElement("field");
-					fields.appendChild(fieldData);
-					fieldData.setAttribute(ATTR_LABEL, columnLabel);
-					fieldData.appendChild(doc.createTextNode(strValue));
-				}
+				String jsonData = (String) row.getColumnValue("patientData");
+				System.out.println(" Reading data.......: " + jsonData);
 				
-				// Create merged Patient Name field if either first name or last name exists
-				if (isNotNullOrEmpty(firstName) || isNotNullOrEmpty(lastName)) {
-					Element patientNameField = doc.createElement("field");
-					fields.appendChild(patientNameField);
-					patientNameField.setAttribute(ATTR_LABEL, patientNameKey);
-					
-					StringBuilder fullName = new StringBuilder();
-					fullName.append(firstName != null ? firstName.trim() : "");
-					
-					if (fullName.length() > 0) {
-						fullName.append(" ");
+				if (jsonData != null) {
+					try {
+						ObjectMapper mapper = new ObjectMapper();
+						Map<String, Object> patientData = mapper.readValue(jsonData, Map.class);
+						
+						// Process identifiers
+						List<Map<String, Object>> identifiers = (List<Map<String, Object>>) patientData.get("identifiers");
+						String barcodeValue = null;
+						String secondaryId = null;
+						
+						for (Map<String, Object> identifier : identifiers) {
+							boolean isPreferred = (boolean) identifier.get("preferred");
+							String identifierValue = (String) identifier.get("identifier");
+							
+							if (isPreferred) {
+								barcodeValue = identifierValue;
+								addField(doc, fields, patientIdKey, identifierValue);
+							} else {
+								secondaryId = identifierValue;
+								addField(doc, fields, patientSecondaryIdKey, identifierValue);
+							}
+						}
+						
+						// Process name
+						Map<String, String> nameData = (Map<String, String>) patientData.get("preferredName");
+						if (nameData != null) {
+							String givenName = nameData.get("givenName");
+							String familyName = nameData.get("familyName");
+							String fullName = (givenName != null ? givenName : "")
+							        + (familyName != null ? " " + familyName : "");
+							addField(doc, fields, patientNameKey, fullName.trim());
+						}
+						
+						// Process gender
+						String gender = (String) patientData.get("gender");
+						if (gender != null) {
+							addField(doc, fields, genderKey, gender);
+						}
+						
+						// Process birthdate
+						String birthdate = patientData.get("birthdate") != null ? patientData.get("birthdate").toString()
+						        : null;
+						if (birthdate != null) {
+							addField(doc, fields, dobKey, birthdate);
+						}
+						
+						// Process age
+						String age = patientData.get("age") != null ? patientData.get("age").toString() : null;
+						if (age != null) {
+							addField(doc, fields, ageKey, age);
+						}
+						// Process address
+						Map<String, String> addressData = (Map<String, String>) patientData.get("preferredAddress");
+						if (addressData != null) {
+							StringBuilder address = new StringBuilder();
+							appendIfNotNull(address, addressData.get("address1"));
+							appendIfNotNull(address, addressData.get("address2"));
+							appendIfNotNull(address, addressData.get("cityVillage"));
+							appendIfNotNull(address, addressData.get("stateProvince"));
+							appendIfNotNull(address, addressData.get("country"));
+							appendIfNotNull(address, addressData.get("postalCode"));
+							
+							if (address.length() > 0) {
+								addField(doc, fields, addressKey, address.toString().trim());
+							}
+						}
+						
+						// Add barcode if enabled
+						Boolean isBarcodeEnabled = getInitializerService()
+						        .getBooleanFromKey("report.patientIdSticker.barcode");
+						if (barcodeValue != null && Boolean.TRUE.equals(isBarcodeEnabled)) {
+							Element barcode = doc.createElement("barcode");
+							barcode.setAttribute("barcodeValue", barcodeValue);
+							templatePIDElement.appendChild(barcode);
+						}
+						
 					}
-					fullName.append(lastName != null ? lastName.trim() : "");
-					
-					patientNameField.appendChild(doc.createTextNode(fullName.toString()));
+					catch (Exception e) {
+						throw new RenderingException("Error processing patient JSON data", e);
+					}
 				}
 			}
-			
-			// Only add the barcode if a value was found and barcode is enabled
-			Boolean isBarcodeEnabled = getInitializerService().getBooleanFromKey("report.patientIdSticker.barcode");
-			if (isNotNullOrEmpty(barcodeValue) && (isBarcodeEnabled != null)) {
-				Element barcode = doc.createElement("barcode");
-				barcode.setAttribute("barcodeValue", barcodeValue);
-				templatePIDElement.appendChild(barcode);
+		}
+	}
+	
+	private void addField(Document doc, Element fields, String label, String value) {
+		if (value != null && !value.trim().isEmpty()) {
+			Element fieldData = doc.createElement("field");
+			fields.appendChild(fieldData);
+			fieldData.setAttribute("label", label);
+			fieldData.appendChild(doc.createTextNode(value));
+		}
+	}
+	
+	private void appendIfNotNull(StringBuilder sb, String value) {
+		if (value != null && !value.trim().isEmpty()) {
+			if (sb.length() > 0) {
+				sb.append(", ");
 			}
+			sb.append(value.trim());
 		}
 	}
 	

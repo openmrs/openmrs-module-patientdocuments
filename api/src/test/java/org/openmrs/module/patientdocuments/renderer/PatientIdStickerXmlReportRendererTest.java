@@ -1,11 +1,13 @@
 package org.openmrs.module.patientdocuments.renderer;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.Set;
 
 import javax.xml.transform.TransformerException;
 
+import org.apache.fop.configuration.ConfigurationException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -15,6 +17,7 @@ import org.openmrs.api.EncounterService;
 import org.openmrs.api.PatientService;
 import org.openmrs.api.context.ContextAuthenticationException;
 import org.openmrs.module.patientdocuments.reports.PatientIdStickerPdfReport;
+import org.openmrs.module.reporting.evaluation.EvaluationException;
 import org.openmrs.test.BaseModuleContextSensitiveTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -37,29 +40,21 @@ public class PatientIdStickerXmlReportRendererTest extends BaseModuleContextSens
 	public ExpectedException expectedException = ExpectedException.none();
 	
 	@Test
-	public void getBytes_shouldThrowWhenPatientMismatches()
-	        throws TransformerException, IOException, org.apache.avalon.framework.configuration.ConfigurationException,
-	        ContextAuthenticationException, IllegalArgumentException, SAXException {
+	public void getBytes_shouldThrowWhenPatientMismatches() throws TransformerException, IOException,
+	        org.apache.avalon.framework.configuration.ConfigurationException, ContextAuthenticationException,
+	        IllegalArgumentException, SAXException, EvaluationException, ConfigurationException, URISyntaxException {
 		
 		// setup
 		Patient patient = ps.getPatient(2);
-		Set<Encounter> encounters = new HashSet<Encounter>();
-		encounters.add(es.getEncounter(3));
-		encounters.add(es.getEncounter(4));
-		
-		expectedException.expect(IllegalArgumentException.class);
-		expectedException.expectMessage(
-		    "The report could not be run because the encounters do not correspond to the specified patient: '"
-		            + patient.getUuid() + "'");
 		
 		// replay
-		pdfReport.getBytes(patient, encounters);
+		pdfReport.getBytes(patient);
 	}
 	
 	@Test
-	public void getBytes_shouldThrowWhenPatientIsMissing()
-	        throws TransformerException, IOException, org.apache.avalon.framework.configuration.ConfigurationException,
-	        ContextAuthenticationException, IllegalArgumentException, SAXException {
+	public void getBytes_shouldThrowWhenPatientIsMissing() throws TransformerException, IOException,
+	        org.apache.avalon.framework.configuration.ConfigurationException, ContextAuthenticationException,
+	        IllegalArgumentException, SAXException, EvaluationException, ConfigurationException, URISyntaxException {
 		
 		// setup
 		expectedException.expect(IllegalArgumentException.class);
@@ -67,7 +62,7 @@ public class PatientIdStickerXmlReportRendererTest extends BaseModuleContextSens
 		        .expectMessage("The report could not be run because neither the patient nor the encounters were provided.");
 		
 		// replay
-		pdfReport.getBytes(null, null);
+		pdfReport.getBytes(null);
 	}
 	
 }

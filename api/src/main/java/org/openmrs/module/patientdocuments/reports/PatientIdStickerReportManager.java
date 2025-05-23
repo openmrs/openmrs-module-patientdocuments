@@ -12,7 +12,6 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.openmrs.module.patientdocuments.ActivatedReportManager;
 import org.openmrs.module.patientdocuments.PatientDocumentsConstants;
-import org.openmrs.module.patientdocuments.library.BasePatientDocumentsDataLibrary;
 import org.openmrs.module.patientdocuments.renderer.PatientIdStickerXmlReportRenderer;
 import org.openmrs.module.initializer.api.InitializerService;
 import org.openmrs.module.reporting.common.MessageUtil;
@@ -35,12 +34,6 @@ public class PatientIdStickerReportManager extends ActivatedReportManager {
 	public static final String REPORT_DEFINITION_NAME = "Patient Identifier Sticker";
 	
 	public static final String DATASET_KEY_STICKER_FIELDS = "fields";
-	
-	@Autowired
-	private BuiltInPatientDataLibrary builtInPatientDataLibrary;
-	
-	@Autowired
-	BasePatientDocumentsDataLibrary basePatientDataLibrary;
 	
 	@Autowired
 	private InitializerService initializerService;
@@ -71,7 +64,7 @@ public class PatientIdStickerReportManager extends ActivatedReportManager {
 	}
 	
 	private Parameter getPatientParameter() {
-		return new Parameter("patientNameOrID", "Patient Name or ID", String.class, null, null);
+		return new Parameter("patientUuid", "Patient UUID", String.class, null, null);
 	}
 	
 	@Override
@@ -89,29 +82,17 @@ public class PatientIdStickerReportManager extends ActivatedReportManager {
 		reportDef.setDescription(this.getDescription());
 		reportDef.setParameters(getParameters());
 		
-		// Add SQL dataset definition
-		SqlDataSetDefinition sqlDsd = createSqlDataSetDefinition();
+		// Add API-based dataset definition
+		PatientIdStickerDataSetDefinition apiDsd = new PatientIdStickerDataSetDefinition();
 		Map<String, Object> parameterMappings = new HashMap<>();
-		parameterMappings.put("patientNameOrID", "${patientNameOrID}");
-		reportDef.addDataSetDefinition(getName(), sqlDsd, parameterMappings);
+		parameterMappings.put("patientUuid", "${patientUuid}");
+		reportDef.addDataSetDefinition(DATASET_KEY_STICKER_FIELDS, apiDsd, parameterMappings);
 		
 		// Add patient dataset definition
-		PatientDataSetDefinition patientDataSetDef = createStickerFieldsDataSetDefinition();
-		reportDef.addDataSetDefinition(DATASET_KEY_STICKER_FIELDS, patientDataSetDef, new HashMap<>());
+		PatientDataSetDefinition patientDataSetDef = new PatientDataSetDefinition();
+		// reportDef.addDataSetDefinition(DATASET_KEY_STICKER_FIELDS, patientDataSetDef, new HashMap<>());
 		
 		return reportDef;
-	}
-	
-	private SqlDataSetDefinition createSqlDataSetDefinition() {
-		SqlDataSetDefinition sqlDsd = new SqlDataSetDefinition();
-		sqlDsd.setName(MessageUtil.translate("patientdocuments.report.patientIdSticker.datasetName"));
-		sqlDsd.setDescription(MessageUtil.translate("patientdocuments.report.patientIdSticker.datasetDescription"));
-		
-		String sql = getStringFromResource("org/openmrs/module/patientdocuments/sql/searchPatient.sql");
-		sqlDsd.setSqlQuery(sql);
-		sqlDsd.addParameters(getParameters());
-		
-		return sqlDsd;
 	}
 	
 	@Override
@@ -122,45 +103,6 @@ public class PatientIdStickerReportManager extends ActivatedReportManager {
 		reportDesign.setReportDefinition(reportDefinition);
 		reportDesign.setRendererType(PatientIdStickerXmlReportRenderer.class);
 		return Arrays.asList(reportDesign);
-	}
-	
-	/**
-	 * Creates a patient sticker fields dataset definition with configurable columns.
-	 * 
-	 * @return the configured PatientDataSetDefinition
-	 */
-	private PatientDataSetDefinition createStickerFieldsDataSetDefinition() {
-		PatientDataSetDefinition patientDataSetDef = new PatientDataSetDefinition();
-		
-		// Map of column definitions with their corresponding data definitions
-		Map<String, PatientDataDefinition> columnDefinitions = createColumnDefinitions();
-		
-		// Add columns that should be included based on configuration
-		for (Map.Entry<String, PatientDataDefinition> entry : columnDefinitions.entrySet()) {
-			if (shouldIncludeColumn(entry.getKey())) {
-				addColumn(patientDataSetDef, entry.getKey(), entry.getValue());
-			}
-		}
-		
-		return patientDataSetDef;
-	}
-	
-	private Map<String, PatientDataDefinition> createColumnDefinitions() {
-		Map<String, PatientDataDefinition> columnDefinitions = new LinkedHashMap<>();
-		columnDefinitions.put("patientdocuments.patientIdSticker.fields.secondaryIdentifier",
-		    basePatientDataLibrary.getSecondaryIdentifier());
-		columnDefinitions.put("patientdocuments.patientIdSticker.fields.identifier",
-		    builtInPatientDataLibrary.getPreferredIdentifierIdentifier());
-		columnDefinitions.put("patientdocuments.patientIdSticker.fields.firstname",
-		    builtInPatientDataLibrary.getPreferredGivenName());
-		columnDefinitions.put("patientdocuments.patientIdSticker.fields.lastname",
-		    builtInPatientDataLibrary.getPreferredFamilyName());
-		columnDefinitions.put("patientdocuments.patientIdSticker.fields.dob", basePatientDataLibrary.getBirthdate());
-		columnDefinitions.put("patientdocuments.patientIdSticker.fields.age", basePatientDataLibrary.getAgeAtEndInYears());
-		columnDefinitions.put("patientdocuments.patientIdSticker.fields.gender", builtInPatientDataLibrary.getGender());
-		columnDefinitions.put("patientdocuments.patientIdSticker.fields.fulladdress",
-		    basePatientDataLibrary.getAddressFull());
-		return columnDefinitions;
 	}
 	
 	/**

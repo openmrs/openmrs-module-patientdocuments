@@ -17,10 +17,7 @@ import static org.openmrs.module.patientdocuments.PatientDocumentsConstants.MODU
 import static org.openmrs.module.patientdocuments.PatientDocumentsConstants.PATIENT_ID_STICKER_ID;
 import static org.openmrs.module.patientdocuments.reports.PatientIdStickerReportManager.DATASET_KEY_STICKER_FIELDS;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -29,6 +26,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -58,8 +56,6 @@ import org.openmrs.module.reporting.report.ReportRequest;
 import org.openmrs.module.reporting.report.renderer.RenderingException;
 import org.openmrs.module.reporting.report.renderer.ReportDesignRenderer;
 import org.openmrs.module.reporting.report.renderer.ReportRenderer;
-import org.openmrs.module.reporting.serializer.ReportingSerializer;
-import org.openmrs.serialization.SerializationException;
 import org.springframework.stereotype.Component;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -149,9 +145,6 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 		// Configure sticker dimensions
 		configureStickerDimensions(rootElement);
 		
-		// Configure sticker layout
-		configureStickerLayout(rootElement);
-		
 		// Configure font settings
 		configureFontSettings(rootElement);
 		
@@ -180,13 +173,6 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 		} else {
 			rootElement.setAttribute("sticker-height", "297mm");
 			rootElement.setAttribute("sticker-width", "210mm");
-		}
-	}
-	
-	private void configureStickerLayout(Element rootElement) {
-		String stickerLayoutType = getInitializerService().getValueFromKey("report.patientIdSticker.layout");
-		if (isNotNullOrEmpty(stickerLayoutType)) {
-			rootElement.setAttribute("layout-type", stickerLayoutType);
 		}
 	}
 	
@@ -304,9 +290,35 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 		}
 	}
 	
+	private Map<String, String> createConfigKeyMap() {
+		Map<String, String> configKeyMap = new HashMap<>();
+		configKeyMap.put("patientdocuments.patientIdSticker.fields.secondaryIdentifier",
+		    "report.patientIdSticker.fields.identifier.secondary");
+		configKeyMap.put("patientdocuments.patientIdSticker.fields.identifier", "report.patientIdSticker.fields.identifier");
+		configKeyMap.put("patientdocuments.patientIdSticker.fields.patientname", "report.patientIdSticker.fields.name");
+		configKeyMap.put("patientdocuments.patientIdSticker.fields.age", "report.patientIdSticker.fields.age");
+		configKeyMap.put("patientdocuments.patientIdSticker.fields.dob", "report.patientIdSticker.fields.dob");
+		configKeyMap.put("patientdocuments.patientIdSticker.fields.gender", "report.patientIdSticker.fields.gender");
+		configKeyMap.put("patientdocuments.patientIdSticker.fields.fulladdress",
+		    "report.patientIdSticker.fields.fulladdress");
+		return configKeyMap;
+	}
+	
+	private boolean shouldIncludeColumn(String columnName) {
+		Map<String, String> configKeyMap = createConfigKeyMap();
+		
+		// Find the matching configuration key
+		for (Map.Entry<String, String> entry : configKeyMap.entrySet()) {
+			if (columnName.equals(entry.getKey())) {
+				return Boolean.TRUE.equals(getInitializerService().getBooleanFromKey(entry.getValue()));
+			}
+		}
+		
+		return false;
+	}
+	
 	private void processDataSetFields(ReportData results, Document doc, Element templatePIDElement) {
 		String dataSetKey = DATASET_KEY_STICKER_FIELDS;
-		String ATTR_LABEL = "label";
 		
 		if (results.getDataSets().containsKey(dataSetKey)) {
 			DataSet dataSet = results.getDataSets().get(dataSetKey);
@@ -323,9 +335,12 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 			String ageKey = i18nTranslator.getMessage("patientdocuments.patientIdSticker.fields.age");
 			String addressKey = i18nTranslator.getMessage("patientdocuments.patientIdSticker.fields.fulladdress");
 			
+			// Get configured secondary ID type
+			String secondaryIdTypeUuid = getInitializerService()
+			        .getValueFromKey("report.patientIdSticker.fields.identifier.secondary.type");
+			
 			for (DataSetRow row : dataSet) {
 				String jsonData = (String) row.getColumnValue("patientData");
-				System.out.println(" Reading data.......: " + jsonData);
 				
 				if (jsonData != null) {
 					try {
@@ -335,62 +350,72 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 						// Process identifiers
 						List<Map<String, Object>> identifiers = (List<Map<String, Object>>) patientData.get("identifiers");
 						String barcodeValue = null;
-						String secondaryId = null;
-						
 						for (Map<String, Object> identifier : identifiers) {
 							boolean isPreferred = (boolean) identifier.get("preferred");
 							String identifierValue = (String) identifier.get("identifier");
+							String identifierTypeUuid = (String) identifier.get("identifierTypeUuid");
 							
-							if (isPreferred) {
+							if (isPreferred && shouldIncludeColumn("patientdocuments.patientIdSticker.fields.identifier")) {
 								barcodeValue = identifierValue;
 								addField(doc, fields, patientIdKey, identifierValue);
-							} else {
-								secondaryId = identifierValue;
+							} else if (secondaryIdTypeUuid != null && secondaryIdTypeUuid.equals(identifierTypeUuid)
+							        && shouldIncludeColumn("patientdocuments.patientIdSticker.fields.secondaryIdentifier")) {
 								addField(doc, fields, patientSecondaryIdKey, identifierValue);
 							}
 						}
 						
 						// Process name
-						Map<String, String> nameData = (Map<String, String>) patientData.get("preferredName");
-						if (nameData != null) {
-							String givenName = nameData.get("givenName");
-							String familyName = nameData.get("familyName");
-							String fullName = (givenName != null ? givenName : "")
-							        + (familyName != null ? " " + familyName : "");
-							addField(doc, fields, patientNameKey, fullName.trim());
+						if (shouldIncludeColumn("patientdocuments.patientIdSticker.fields.patientname")) {
+							Map<String, String> nameData = (Map<String, String>) patientData.get("preferredName");
+							if (nameData != null) {
+								String givenName = nameData.get("givenName");
+								String familyName = nameData.get("familyName");
+								String fullName = (givenName != null ? givenName : "")
+								        + (familyName != null ? " " + familyName : "");
+								addField(doc, fields, patientNameKey, fullName.trim());
+							}
 						}
 						
 						// Process gender
-						String gender = (String) patientData.get("gender");
-						if (gender != null) {
-							addField(doc, fields, genderKey, gender);
+						if (shouldIncludeColumn("patientdocuments.patientIdSticker.fields.gender")) {
+							String gender = (String) patientData.get("gender");
+							if (gender != null) {
+								addField(doc, fields, genderKey, gender);
+							}
 						}
 						
 						// Process birthdate
-						String birthdate = patientData.get("birthdate") != null ? patientData.get("birthdate").toString()
-						        : null;
-						if (birthdate != null) {
-							addField(doc, fields, dobKey, birthdate);
+						if (shouldIncludeColumn("patientdocuments.patientIdSticker.fields.dob")) {
+							String birthdate = patientData.get("birthdate") != null ? patientData.get("birthdate").toString()
+							        : null;
+							if (birthdate != null) {
+								addField(doc, fields, dobKey, birthdate);
+							}
 						}
 						
 						// Process age
-						String age = patientData.get("age") != null ? patientData.get("age").toString() : null;
-						if (age != null) {
-							addField(doc, fields, ageKey, age);
+						if (shouldIncludeColumn("patientdocuments.patientIdSticker.fields.age")) {
+							String age = patientData.get("age") != null ? patientData.get("age").toString() : null;
+							if (age != null) {
+								addField(doc, fields, ageKey, age);
+							}
 						}
+						
 						// Process address
-						Map<String, String> addressData = (Map<String, String>) patientData.get("preferredAddress");
-						if (addressData != null) {
-							StringBuilder address = new StringBuilder();
-							appendIfNotNull(address, addressData.get("address1"));
-							appendIfNotNull(address, addressData.get("address2"));
-							appendIfNotNull(address, addressData.get("cityVillage"));
-							appendIfNotNull(address, addressData.get("stateProvince"));
-							appendIfNotNull(address, addressData.get("country"));
-							appendIfNotNull(address, addressData.get("postalCode"));
-							
-							if (address.length() > 0) {
-								addField(doc, fields, addressKey, address.toString().trim());
+						if (shouldIncludeColumn("patientdocuments.patientIdSticker.fields.fulladdress")) {
+							Map<String, String> addressData = (Map<String, String>) patientData.get("preferredAddress");
+							if (addressData != null) {
+								StringBuilder address = new StringBuilder();
+								appendIfNotNull(address, addressData.get("address1"));
+								appendIfNotNull(address, addressData.get("address2"));
+								appendIfNotNull(address, addressData.get("cityVillage"));
+								appendIfNotNull(address, addressData.get("stateProvince"));
+								appendIfNotNull(address, addressData.get("country"));
+								appendIfNotNull(address, addressData.get("postalCode"));
+								
+								if (address.length() > 0) {
+									addField(doc, fields, addressKey, address.toString().trim());
+								}
 							}
 						}
 						

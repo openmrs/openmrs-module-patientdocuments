@@ -13,6 +13,7 @@
  */
 package org.openmrs.module.patientdocuments.web.controller;
 
+import static org.openmrs.module.patientdocuments.PatientDocumentsConstants.PATIENTHISTORY_ID;
 import static org.openmrs.module.patientdocuments.PatientDocumentsConstants.PATIENT_ID_STICKER_ID;
 import static org.openmrs.module.patientdocuments.PatientDocumentsConstants.ROOT_URL;
 
@@ -61,7 +62,7 @@ public class PatientIdStickerDataPdfExportController {
 		}
 	}
 	
-	@RequestMapping(value = "/module/commonreports" + "/" + PATIENT_ID_STICKER_ID)
+	@RequestMapping(value = ROOT_URL + "/" + PATIENT_ID_STICKER_ID)
 	public void getPatientIdSticker(ModelMap model, HttpServletRequest request, HttpServletResponse response,
 	        @RequestParam(value = "patientUuid") String patientUuid,
 	        @RequestParam(value = "inline", required = false, defaultValue = "true") boolean inline) {

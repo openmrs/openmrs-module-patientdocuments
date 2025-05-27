@@ -1,0 +1,25 @@
+package org.openmrs.module.patientdocuments.library;
+
+import org.openmrs.module.reporting.dataset.definition.BaseDataSetDefinition;
+import org.openmrs.module.reporting.evaluation.parameter.Parameter;
+import org.openmrs.module.reporting.common.Localized;
+
+/**
+ * A dataset definition that fetches patient data using the OpenMRS API and returns it as JSON.
+ */
+@Localized("reporting.PatientIdStickerDataSetDefinition")
+public class PatientIdStickerDataSetDefinition extends BaseDataSetDefinition {
+	
+	private static final long serialVersionUID = 1L;
+	
+	//***** CONSTRUCTORS *****
+	
+	/**
+	 * Default Constructor
+	 */
+	
+	public PatientIdStickerDataSetDefinition() {
+		super();
+		addParameter(new Parameter("patientUuid", "Patient UUID", String.class));
+	}
+}

@@ -1,4 +1,4 @@
-package org.openmrs.module.patientdocuments.reports;
+package org.openmrs.module.patientdocuments.library;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -21,17 +21,15 @@ import org.openmrs.module.reporting.dataset.DataSetColumn;
 import org.openmrs.module.reporting.dataset.DataSetRow;
 import org.openmrs.module.reporting.dataset.SimpleDataSet;
 import org.openmrs.module.reporting.dataset.definition.DataSetDefinition;
-import org.openmrs.module.reporting.definition.evaluator.DefinitionEvaluator;
-import org.openmrs.module.reporting.evaluation.Evaluated;
+import org.openmrs.module.reporting.dataset.definition.evaluator.DataSetEvaluator;
 import org.openmrs.module.reporting.evaluation.EvaluationContext;
-import org.openmrs.module.reporting.evaluation.EvaluationException;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Component
 @Handler(supports = PatientIdStickerDataSetDefinition.class, order = 50)
-public class PatientIdStickerDataSetEvaluatorImpl implements PatientIdStickerDataSetEvaluator {
+public class PatientIdStickerDataSetEvaluator implements DataSetEvaluator {
 	
 	private final ObjectMapper objectMapper = new ObjectMapper();
 	
@@ -75,7 +73,7 @@ public class PatientIdStickerDataSetEvaluatorImpl implements PatientIdStickerDat
 		patientData.put("birthdate", new SimpleDateFormat("yyyy-MM-dd").format(birthdate));
 		patientData.put("age", calculateAge(birthdate));
 		patientData.put("birthdateEstimated", patient.getBirthdateEstimated());
-		patientData.put("dead", patient.isDead());
+		patientData.put("dead", patient.getDead());
 		patientData.put("deathDate", patient.getDeathDate());
 		patientData.put("causeOfDeath", patient.getCauseOfDeath() != null ? patient.getCauseOfDeath().getName() : null);
 		
@@ -96,7 +94,7 @@ public class PatientIdStickerDataSetEvaluatorImpl implements PatientIdStickerDat
 		// All names
 		List<Map<String, Object>> allNames = new ArrayList<>();
 		for (PersonName name : patient.getNames()) {
-			if (!name.isVoided()) {
+			if (!name.getVoided()) {
 				Map<String, Object> nameData = new HashMap<>();
 				nameData.put("givenName", name.getGivenName());
 				nameData.put("middleName", name.getMiddleName());
@@ -105,7 +103,7 @@ public class PatientIdStickerDataSetEvaluatorImpl implements PatientIdStickerDat
 				nameData.put("prefix", name.getPrefix());
 				nameData.put("familyNamePrefix", name.getFamilyNamePrefix());
 				nameData.put("degree", name.getDegree());
-				nameData.put("preferred", name.isPreferred());
+				nameData.put("preferred", name.getPreferred());
 				allNames.add(nameData);
 			}
 		}
@@ -130,7 +128,7 @@ public class PatientIdStickerDataSetEvaluatorImpl implements PatientIdStickerDat
 		// All addresses
 		List<Map<String, Object>> allAddresses = new ArrayList<>();
 		for (PersonAddress address : patient.getAddresses()) {
-			if (!address.isVoided()) {
+			if (!address.getVoided()) {
 				Map<String, Object> addressData = new HashMap<>();
 				addressData.put("address1", address.getAddress1());
 				addressData.put("address2", address.getAddress2());
@@ -141,7 +139,7 @@ public class PatientIdStickerDataSetEvaluatorImpl implements PatientIdStickerDat
 				addressData.put("countyDistrict", address.getCountyDistrict());
 				addressData.put("latitude", address.getLatitude());
 				addressData.put("longitude", address.getLongitude());
-				addressData.put("preferred", address.isPreferred());
+				addressData.put("preferred", address.getPreferred());
 				allAddresses.add(addressData);
 			}
 		}
@@ -150,12 +148,12 @@ public class PatientIdStickerDataSetEvaluatorImpl implements PatientIdStickerDat
 		// Identifiers
 		List<Map<String, Object>> identifiers = new ArrayList<>();
 		for (PatientIdentifier identifier : patient.getIdentifiers()) {
-			if (!identifier.isVoided()) {
+			if (!identifier.getVoided()) {
 				Map<String, Object> identifierData = new HashMap<>();
 				identifierData.put("identifier", identifier.getIdentifier());
 				identifierData.put("identifierType", identifier.getIdentifierType().getName());
 				identifierData.put("identifierTypeUuid", identifier.getIdentifierType().getUuid());
-				identifierData.put("preferred", identifier.isPreferred());
+				identifierData.put("preferred", identifier.getPreferred());
 				identifierData.put("location", identifier.getLocation() != null ? identifier.getLocation().getName() : null);
 				identifiers.add(identifierData);
 			}
@@ -192,7 +190,7 @@ public class PatientIdStickerDataSetEvaluatorImpl implements PatientIdStickerDat
 		
 		Calendar from = Calendar.getInstance();
 		from.setTime(birthDate);
-		Calendar to = Calendar.getInstance(); // current date/time
+		Calendar to = Calendar.getInstance();
 		
 		long diffInMillis = to.getTimeInMillis() - from.getTimeInMillis();
 		long hourDiff = diffInMillis / (60 * 60 * 1000);
@@ -225,7 +223,6 @@ public class PatientIdStickerDataSetEvaluatorImpl implements PatientIdStickerDat
 			return weekDiff + (weekDiff == 1 ? " week " : " weeks ") + remainderDayDiff
 			        + (remainderDayDiff == 1 ? " day" : " days");
 		} else if (yearDiff < 2) {
-			// Calculate remaining days after subtracting months
 			Calendar temp = (Calendar) from.clone();
 			temp.add(Calendar.MONTH, monthDiff);
 			long remainderDayDiff = daysBetween(temp, to);
@@ -236,7 +233,6 @@ public class PatientIdStickerDataSetEvaluatorImpl implements PatientIdStickerDat
 			return monthDiff + (monthDiff == 1 ? " month " : " months ") + remainderDayDiff
 			        + (remainderDayDiff == 1 ? " day" : " days");
 		} else if (yearDiff < 18) {
-			// Calculate remaining months after subtracting years
 			Calendar temp = (Calendar) from.clone();
 			temp.add(Calendar.YEAR, yearDiff);
 			int remainderMonthDiff = monthsBetween(temp, to);

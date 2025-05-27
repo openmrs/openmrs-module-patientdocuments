@@ -5,6 +5,39 @@
 The `patientIdStickerFopStylesheet.xsl` stylesheet is designed to generate patient identification stickers for medical facilities.  See Patient Identifier Sticker Configuration for configuration details.
 It transforms XML patient data into formatted stickers that can be printed on label sheets. The stylesheet is highly customizable, allowing for dynamic configuration of sticker dimensions, font sizes, layouts, and the inclusion of barcodes and organizational branding.
 
+## Property-Driven Stylesheet System
+
+The system uses a property-driven approach to select which XSL stylesheet to use for rendering the patient ID stickers. This allows for easy customization and implementation-specific styling without modifying the core code.
+
+### Configuration
+
+1. Set the `patientdocuments.stylesheet.name` global property to specify which stylesheet to use:
+   - Default value: `defaultPatientIdStickerFopStylesheet.xsl`
+   - Example for MSF: `msfPatientIdStickerFopStylesheet.xsl`
+
+2. Available Stylesheets:
+   - `defaultPatientIdStickerFopStylesheet.xsl`: The baseline stylesheet with standard layout and styling
+   - `msfPatientIdStickerFopStylesheet.xsl`: MSF-specific stylesheet with custom layout and fonts
+
+### Creating Custom Stylesheets
+
+To create a custom stylesheet:
+
+1. Create a new XSL file in the `api/src/main/resources` directory
+2. Import the default stylesheet using:
+   ```xml
+   <xsl:import href="defaultPatientIdStickerFopStylesheet.xsl"/>
+   ```
+3. Override specific templates and variables as needed
+4. Set the `patientdocuments.stylesheet.name` property to your new stylesheet name
+
+### Best Practices
+
+1. Always extend the default stylesheet rather than creating from scratch
+2. Keep customizations focused on layout and styling
+3. Maintain consistent variable names and structure
+4. Document any custom features or requirements
+
 ## Key Features
 
 - **Dynamic Sizing**: Adjustable sticker height and width

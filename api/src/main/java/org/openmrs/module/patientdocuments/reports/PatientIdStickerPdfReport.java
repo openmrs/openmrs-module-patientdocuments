@@ -1,7 +1,5 @@
 package org.openmrs.module.patientdocuments.reports;
 
-import static org.openmrs.module.patientdocuments.reports.PatientIdStickerReportManager.REPORT_DESIGN_UUID;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -9,13 +7,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.io.File;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
-
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Result;
 import javax.xml.transform.Transformer;
@@ -27,34 +20,26 @@ import javax.xml.transform.stream.StreamSource;
 import org.apache.fop.configuration.Configuration;
 import org.apache.fop.configuration.ConfigurationException;
 import org.apache.fop.configuration.DefaultConfigurationBuilder;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.fop.apps.FOUserAgent;
 import org.apache.fop.apps.Fop;
 import org.apache.fop.apps.FopFactory;
 import org.apache.fop.apps.FopFactoryBuilder;
 import org.apache.fop.apps.MimeConstants;
-import org.openmrs.Encounter;
 import org.openmrs.Patient;
-import org.openmrs.api.EncounterService;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.context.ContextAuthenticationException;
+import org.openmrs.module.initializer.api.InitializerService;
 import org.openmrs.module.patientdocuments.PatientDocumentsConstants;
 import org.openmrs.module.patientdocuments.common.PatientDocumentsPrivilegeConstants;
+import org.openmrs.module.patientdocuments.library.PatientIdStickerDataSetDefinition;
+import org.openmrs.module.patientdocuments.library.PatientIdStickerDataSetEvaluator;
 import org.openmrs.module.patientdocuments.renderer.PatientIdStickerXmlReportRenderer;
-import org.openmrs.module.patientsummary.PatientSummaryResult;
-import org.openmrs.module.patientsummary.PatientSummaryTemplate;
-import org.openmrs.module.patientsummary.api.PatientSummaryService;
 import org.openmrs.module.reporting.dataset.DataSet;
 import org.openmrs.module.reporting.evaluation.EvaluationContext;
 import org.openmrs.module.reporting.evaluation.EvaluationException;
-import org.openmrs.module.reporting.evaluation.context.EncounterEvaluationContext;
-import org.openmrs.module.reporting.query.encounter.EncounterIdSet;
 import org.openmrs.module.reporting.report.ReportData;
-import org.openmrs.module.reporting.report.ReportDesign;
-import org.openmrs.module.reporting.report.service.ReportService;
 import org.openmrs.util.OpenmrsClassLoader;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.xml.sax.SAXException;
 
@@ -62,10 +47,10 @@ import org.xml.sax.SAXException;
 public class PatientIdStickerPdfReport {
 	
 	@Autowired
-	private ReportService rs;
-	
+	private PatientIdStickerDataSetEvaluator evaluator;
+
 	@Autowired
-	private PatientIdStickerDataSetEvaluatorImpl evaluator;
+	private InitializerService inzService;
 	
 	/**
 	 * Renders the PDF bytes for the patient ID sticker.
@@ -92,9 +77,6 @@ public class PatientIdStickerPdfReport {
 		EvaluationContext context = new EvaluationContext();
 		context.addParameterValue("patientUuid", patient.getUuid());
 		
-		// Get report design
-		ReportDesign reportDesign = rs.getReportDesignByUuid(REPORT_DESIGN_UUID);
-		
 		// Create and evaluate dataset definition
 		PatientIdStickerDataSetDefinition dsd = new PatientIdStickerDataSetDefinition();
 		DataSet dataSet = (DataSet) evaluator.evaluate(dsd, context);
@@ -111,8 +93,15 @@ public class PatientIdStickerPdfReport {
 		
 		// Transform XML to PDF using XSL
 		StreamSource xmlSourceStream = new StreamSource(new ByteArrayInputStream(xmlOutputStream.toByteArray()));
+		
+		// Get the stylesheet name from properties or use default
+		String stylesheetName = inzService.getValueFromKey("report.patientIdSticker.stylesheet");
+		if (stylesheetName == null) {
+			stylesheetName = PatientDocumentsConstants.PATIENT_ID_STICKER_XSL_PATH;
+		}
+		
 		StreamSource xslTransformStream = new StreamSource(
-		        OpenmrsClassLoader.getInstance().getResourceAsStream(PatientDocumentsConstants.PATIENT_ID_STICKER_XSL_PATH));
+		        OpenmrsClassLoader.getInstance().getResourceAsStream(stylesheetName));
 		
 		ByteArrayOutputStream outStream = new ByteArrayOutputStream();
 		writeToOutputStream(xmlSourceStream, xslTransformStream, outStream);

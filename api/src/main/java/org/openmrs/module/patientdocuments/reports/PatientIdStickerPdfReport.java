@@ -103,9 +103,10 @@ public class PatientIdStickerPdfReport {
 		StreamSource xslTransformStream = new StreamSource(
 		        OpenmrsClassLoader.getInstance().getResourceAsStream(stylesheetName));
 		
-		ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-		writeToOutputStream(xmlSourceStream, xslTransformStream, outStream);
-		return outStream.toByteArray();
+		try (ByteArrayOutputStream outStream = new ByteArrayOutputStream()) {
+			writeToOutputStream(xmlSourceStream, xslTransformStream, outStream);
+			return outStream.toByteArray();
+		}
 	}
 	
 	/**

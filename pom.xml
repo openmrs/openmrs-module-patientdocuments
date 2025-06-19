@@ -38,8 +38,8 @@
 
 	<properties>
 		<!-- override old openmrs-sdk maven parent pom properties -->
-		<javaCompilerSource>1.8</javaCompilerSource>
-		<javaCompilerTarget>1.8</javaCompilerTarget>
+		<javaCompilerSource>8</javaCompilerSource>
+		<javaCompilerTarget>8</javaCompilerTarget>
 		<openmrsPlatformVersion>2.0.0</openmrsPlatformVersion>
 		<openmrsPlatformToolsVersion>2.0.0</openmrsPlatformToolsVersion>
 		<reportingVersion>1.21.0</reportingVersion>

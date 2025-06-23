@@ -1,6 +1,8 @@
 package org.openmrs.module.patientdocuments.library;
 
-import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -16,6 +18,7 @@ import org.openmrs.PersonName;
 import org.openmrs.annotation.Handler;
 import org.openmrs.api.PatientService;
 import org.openmrs.api.context.Context;
+import org.openmrs.messagesource.MessageSourceService;
 import org.openmrs.module.reporting.dataset.DataSet;
 import org.openmrs.module.reporting.dataset.DataSetColumn;
 import org.openmrs.module.reporting.dataset.DataSetRow;
@@ -66,11 +69,12 @@ public class PatientIdStickerDataSetEvaluator implements DataSetEvaluator {
 		
 		// Basic patient information
 		Date birthdate = patient.getBirthdate();
+		LocalDateTime birthDateTime = birthdate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
 		
 		patientData.put("uuid", patient.getUuid());
 		patientData.put("id", patient.getId());
 		patientData.put("gender", patient.getGender());
-		patientData.put("birthdate", new SimpleDateFormat("yyyy-MM-dd").format(birthdate));
+		patientData.put("birthdate", birthDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
 		patientData.put("age", calculateAge(birthdate));
 		patientData.put("birthdateEstimated", patient.getBirthdateEstimated());
 		patientData.put("dead", patient.getDead());
@@ -79,35 +83,7 @@ public class PatientIdStickerDataSetEvaluator implements DataSetEvaluator {
 		
 		// Preferred name
 		PersonName preferredName = patient.getPersonName();
-		if (preferredName != null) {
-			Map<String, String> nameData = new HashMap<>();
-			nameData.put("givenName", preferredName.getGivenName());
-			nameData.put("middleName", preferredName.getMiddleName());
-			nameData.put("familyName", preferredName.getFamilyName());
-			nameData.put("familyName2", preferredName.getFamilyName2());
-			nameData.put("prefix", preferredName.getPrefix());
-			nameData.put("familyNamePrefix", preferredName.getFamilyNamePrefix());
-			nameData.put("degree", preferredName.getDegree());
-			patientData.put("preferredName", nameData);
-		}
-		
-		// All names
-		List<Map<String, Object>> allNames = new ArrayList<>();
-		for (PersonName name : patient.getNames()) {
-			if (!name.getVoided()) {
-				Map<String, Object> nameData = new HashMap<>();
-				nameData.put("givenName", name.getGivenName());
-				nameData.put("middleName", name.getMiddleName());
-				nameData.put("familyName", name.getFamilyName());
-				nameData.put("familyName2", name.getFamilyName2());
-				nameData.put("prefix", name.getPrefix());
-				nameData.put("familyNamePrefix", name.getFamilyNamePrefix());
-				nameData.put("degree", name.getDegree());
-				nameData.put("preferred", name.getPreferred());
-				allNames.add(nameData);
-			}
-		}
-		patientData.put("allNames", allNames);
+		patientData.put("allNames", preferredName.getFullName());
 		
 		// Preferred address
 		PersonAddress preferredAddress = patient.getPersonAddress();
@@ -205,46 +181,53 @@ public class PatientIdStickerDataSetEvaluator implements DataSetEvaluator {
 			monthDiff += 12;
 		}
 		
+		MessageSourceService i18nTranslator = Context.getMessageSourceService();
+		String justNow = i18nTranslator.getMessage("patientdocuments.justnow");
+		
 		if (hourDiff < 2) {
 			long minuteDiff = diffInMillis / (60 * 1000);
 			if (minuteDiff == 0) {
-				return "just now";
+				return justNow;
 			}
-			return minuteDiff + (minuteDiff == 1 ? " minute" : " minutes");
+			return formatUnit(minuteDiff, "minute", "minutes");
 		} else if (dayDiff < 2) {
-			return hourDiff + (hourDiff == 1 ? " hour" : " hours");
+			return formatUnit(hourDiff, "hour", "hours");
 		} else if (weekDiff < 4) {
-			return dayDiff + (dayDiff == 1 ? " day" : " days");
+			return formatUnit(dayDiff, "day", "days");
 		} else if (yearDiff < 1) {
 			long remainderDayDiff = dayDiff - (weekDiff * 7);
 			if (remainderDayDiff == 0) {
-				return weekDiff + (weekDiff == 1 ? " week" : " weeks");
+				return formatUnit(weekDiff, "week", "weeks");
 			}
-			return weekDiff + (weekDiff == 1 ? " week " : " weeks ") + remainderDayDiff
-			        + (remainderDayDiff == 1 ? " day" : " days");
+			return formatUnit(weekDiff, "week", "weeks") + " " + formatUnit(remainderDayDiff, "day", "days");
 		} else if (yearDiff < 2) {
 			Calendar temp = (Calendar) from.clone();
 			temp.add(Calendar.MONTH, monthDiff);
 			long remainderDayDiff = daysBetween(temp, to);
 			
 			if (remainderDayDiff == 0) {
-				return monthDiff + (monthDiff == 1 ? " month" : " months");
+				return formatUnit(monthDiff, "month", "months");
 			}
-			return monthDiff + (monthDiff == 1 ? " month " : " months ") + remainderDayDiff
-			        + (remainderDayDiff == 1 ? " day" : " days");
+			return formatUnit(monthDiff, "month", "months") + " " + formatUnit(remainderDayDiff, "day", "days");
 		} else if (yearDiff < 18) {
 			Calendar temp = (Calendar) from.clone();
 			temp.add(Calendar.YEAR, yearDiff);
 			int remainderMonthDiff = monthsBetween(temp, to);
 			
 			if (remainderMonthDiff == 0) {
-				return yearDiff + (yearDiff == 1 ? " year" : " years");
+				return formatUnit(yearDiff, "year", "years");
 			}
-			return yearDiff + (yearDiff == 1 ? " year " : " years ") + remainderMonthDiff
-			        + (remainderMonthDiff == 1 ? " month" : " months");
+			return formatUnit(yearDiff, "year", "years") + " " + formatUnit(remainderMonthDiff, "month", "months");
 		} else {
-			return yearDiff + (yearDiff == 1 ? " year" : " years");
+			return formatUnit(yearDiff, "year", "years");
 		}
+	}
+	
+	private String formatUnit(long value, String singularKey, String pluralKey) {
+		MessageSourceService i18nTranslator = Context.getMessageSourceService();
+		String singular = i18nTranslator.getMessage("patientdocuments." + singularKey);
+		String plural = i18nTranslator.getMessage("patientdocuments." + pluralKey);
+		return value + " " + (value == 1 ? singular : plural);
 	}
 	
 	private long daysBetween(Calendar startDate, Calendar endDate) {

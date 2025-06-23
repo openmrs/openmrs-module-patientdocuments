@@ -10,22 +10,19 @@
 package org.openmrs.module.patientdocuments;
 
 import static org.openmrs.module.patientdocuments.PatientDocumentsConstants.MODULE_NAME;
-import static org.openmrs.module.patientdocuments.PatientDocumentsConstants.PATIENTHISTORY_ID;
-import static org.openmrs.module.patientdocuments.PatientDocumentsConstants.ROOT_URL;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.openmrs.api.AdministrationService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.BaseModuleActivator;
 import org.openmrs.module.reporting.report.manager.ReportManagerUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class contains the logic that is run every time this module is either started or shutdown
  */
 public class PatientDocumentsActivator extends BaseModuleActivator {
 	
-	private Log log = LogFactory.getLog(this.getClass());
+	private static final Logger log = LoggerFactory.getLogger(PatientDocumentsActivator.class);
 	
 	/**
 	 * @see #started()
@@ -43,13 +40,6 @@ public class PatientDocumentsActivator extends BaseModuleActivator {
 					log.error("Failed to setup '" + reportManager.getName() + "' report because of: " + e.getMessage());
 				}
 			}
-		}
-		
-		{ // https://issues.openmrs.org/browse/HTML-714
-			AdministrationService as = Context.getAdministrationService();
-			as.setGlobalProperty("htmlformentryui.customPrintProvider", ROOT_URL);
-			as.setGlobalProperty("htmlformentryui.customPrintPageName", PATIENTHISTORY_ID + "/encounter");
-			as.setGlobalProperty("htmlformentryui.customPrintTarget", "_blank");
 		}
 	}
 	

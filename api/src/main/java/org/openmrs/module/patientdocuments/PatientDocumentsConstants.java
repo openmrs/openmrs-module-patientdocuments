@@ -23,23 +23,9 @@ public class PatientDocumentsConstants {
 	 */
 	public static final String COMPONENT_CONTEXT = MODULE_ARTIFACT_ID + ".patientIdentificationStickersContext";
 	
-	public static final String COMPONENT_REPORTMANAGER_OPDRECBOOK = MODULE_ARTIFACT_ID + ".outpatientRecordBook";
-	
-	public static final String COMPONENT_REPORTMANAGER_OPDCONSULT = MODULE_ARTIFACT_ID + ".outpatientConsultation";
-	
-	public static final String COMPONENT_REPORTMANAGER_ANTENATAL = MODULE_ARTIFACT_ID + ".antenatal";
-	
-	public static final String PATIENTHISTORY_ID = "patientHistory";
-	
 	public static final String PATIENT_ID_STICKER_ID = "patientIdSticker";
 	
-	public static final String COMPONENT_REPORTMANAGER_PATIENTHISTORY = MODULE_ARTIFACT_ID + "." + PATIENTHISTORY_ID;
-	
 	public static final String COMPONENT_REPORTMANAGER_PATIENT_ID_STICKER = MODULE_ARTIFACT_ID + "." + PATIENT_ID_STICKER_ID;
-	
-	public static final String COMPONENT_REPORTMANAGER_LAB = MODULE_ARTIFACT_ID + ".lab";
-	
-	public static final String COMPONENT_REPORTMANAGER_VACCINATION = MODULE_ARTIFACT_ID + ".vaccination";
 	
 	/*
 	 * URIs URLs

@@ -76,11 +76,9 @@ public class PatientIdStickerDataPdfExportControllerTest extends BaseModuleWebCo
 	}
 	
 	private String generateAndExtractPdfText(String patientUuid) throws IOException {
-		ModelMap model = new ModelMap();
-		MockHttpServletRequest request = new MockHttpServletRequest();
 		MockHttpServletResponse response = new MockHttpServletResponse();
 		
-		ctrl.getPatientIdSticker(model, request, response, patientUuid, false);
+		ctrl.getPatientIdSticker(response, patientUuid, false);
 		
 		byte[] pdfData = response.getContentAsByteArray();
 		log.info("PDF Data (Base64): {}", java.util.Base64.getEncoder().encodeToString(pdfData));

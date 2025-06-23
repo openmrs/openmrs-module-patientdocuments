@@ -232,12 +232,12 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 	
 	private void configureHeader(Document doc, Element templatePIDElement) {
 		Element header = doc.createElement("header");
-		Element headerText = doc.createElement("headerText");
+		// Element headerText = doc.createElement("headerText");
 		
-		String headerStringId = String.join(".", MODULE_ARTIFACT_ID, PATIENT_ID_STICKER_ID.toLowerCase(), "requestedby");
-		headerText.setTextContent(
-		    getMessageSourceService().getMessage(headerStringId) + " " + Context.getAuthenticatedUser().getDisplayString());
-		header.appendChild(headerText);
+		// String headerStringId = String.join(".", MODULE_ARTIFACT_ID, PATIENT_ID_STICKER_ID.toLowerCase(), "requestedby");
+		// headerText.setTextContent(
+		//     getMessageSourceService().getMessage(headerStringId) + " " + Context.getAuthenticatedUser().getDisplayString());
+		// header.appendChild(headerText);
 		
 		// Handle logo if configured		
 		String logoUrlPath = getInitializerService().getValueFromKey("report.patientIdSticker.logourl");

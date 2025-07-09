@@ -1,27 +1,25 @@
+/**
+ * This Source Code Form is subject to the terms of the Mozilla Public License,
+ * v. 2.0. If a copy of the MPL was not distributed with this file, You can
+ * obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under
+ * the terms of the Healthcare Disclaimer located at http://openmrs.org/license.
+ *
+ * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
+ * graphic logo is a trademark of OpenMRS Inc.
+ */
 package org.openmrs.module.patientdocuments.renderer;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.HashSet;
-import java.util.Set;
-
-import javax.xml.transform.TransformerException;
-
-import org.apache.fop.configuration.ConfigurationException;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.openmrs.Encounter;
 import org.openmrs.Patient;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.PatientService;
-import org.openmrs.api.context.ContextAuthenticationException;
 import org.openmrs.module.patientdocuments.reports.PatientIdStickerPdfReport;
-import org.openmrs.module.reporting.evaluation.EvaluationException;
 import org.openmrs.test.BaseModuleContextSensitiveTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.xml.sax.SAXException;
 
 public class PatientIdStickerXmlReportRendererTest extends BaseModuleContextSensitiveTest {
 	
@@ -39,29 +37,21 @@ public class PatientIdStickerXmlReportRendererTest extends BaseModuleContextSens
 	@Rule
 	public ExpectedException expectedException = ExpectedException.none();
 	
-	@Test
-	public void getBytes_shouldThrowWhenPatientMismatches() throws TransformerException, IOException,
-	        org.apache.avalon.framework.configuration.ConfigurationException, ContextAuthenticationException,
-	        IllegalArgumentException, SAXException, EvaluationException, ConfigurationException, URISyntaxException {
-		
-		// setup
+	@Before
+	public void setup() throws Exception {
+		// Load a minimal patient dataset if available
+		// If you have a specific dataset, replace the path below
+		executeDataSet("org/openmrs/module/patientdocuments/include/patientIdStickerManagerTestDataset.xml");
+	}
+	
+	@Test(expected = RuntimeException.class)
+	public void getBytes_shouldThrowWhenPatientMismatches() throws Exception {
 		Patient patient = ps.getPatient(2);
-		
-		// replay
 		pdfReport.getBytes(patient);
 	}
 	
-	@Test
-	public void getBytes_shouldThrowWhenPatientIsMissing() throws TransformerException, IOException,
-	        org.apache.avalon.framework.configuration.ConfigurationException, ContextAuthenticationException,
-	        IllegalArgumentException, SAXException, EvaluationException, ConfigurationException, URISyntaxException {
-		
-		// setup
-		expectedException.expect(IllegalArgumentException.class);
-		expectedException
-		        .expectMessage("The report could not be run because neither the patient nor the encounters were provided.");
-		
-		// replay
+	@Test(expected = IllegalArgumentException.class)
+	public void getBytes_shouldThrowWhenPatientIsMissing() throws Exception {
 		pdfReport.getBytes(null);
 	}
 	

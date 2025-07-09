@@ -12,6 +12,7 @@ import java.util.Map;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Result;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.sax.SAXResult;
@@ -31,7 +32,6 @@ import org.openmrs.api.context.Context;
 import org.openmrs.module.initializer.api.InitializerService;
 import org.openmrs.module.patientdocuments.PatientDocumentsConstants;
 import org.openmrs.module.patientdocuments.common.PatientDocumentsPrivilegeConstants;
-import org.openmrs.module.patientdocuments.exception.PatientIdStickerGenerationException;
 import org.openmrs.module.patientdocuments.library.PatientIdStickerDataSetDefinition;
 import org.openmrs.module.patientdocuments.library.PatientIdStickerDataSetEvaluator;
 import org.openmrs.module.patientdocuments.renderer.PatientIdStickerXmlReportRenderer;
@@ -48,148 +48,182 @@ import org.xml.sax.SAXException;
 
 @Component
 public class PatientIdStickerPdfReport {
-    
-    private static final Logger log = LoggerFactory.getLogger(PatientIdStickerPdfReport.class);
-    private static final String FOP_CONFIG_PATH = "conf/fop.xconf.xml";
-    
-    @Autowired
-    private PatientIdStickerDataSetEvaluator evaluator;
-    
-    @Autowired
-    private InitializerService inzService;
-
-    public byte[] getBytes(Patient patient) throws PatientIdStickerGenerationException {
-        validatePatientAndPrivileges(patient);
-        
-        try {
-            ReportData reportData = createReportData(patient);
-            byte[] xmlBytes = renderReportToXml(reportData);
-            return transformXmlToPdf(xmlBytes);
-        } 
-        catch (Exception e) {
-            String patientId = patient != null ? patient.getUuid() : "null";
-            log.error("Error generating patient ID sticker for patient: {}", patientId, e);
-            throw new PatientIdStickerGenerationException("Failed to generate patient ID sticker");
-        }
-    }
-
-    private void validatePatientAndPrivileges(Patient patient) {
-        Context.requirePrivilege(PatientDocumentsPrivilegeConstants.VIEW_PATIENT_ID_STICKER);
-        if (patient == null) {
-            throw new IllegalArgumentException("Patient cannot be null");
-        }
-    }
-
-    private ReportData createReportData(Patient patient) throws EvaluationException {
-        EvaluationContext context = new EvaluationContext();
-        context.addParameterValue("patientUuid", patient.getUuid());
-        
-        PatientIdStickerDataSetDefinition dsd = new PatientIdStickerDataSetDefinition();
-        DataSet dataSet = evaluator.evaluate(dsd, context);
-        
-        ReportData reportData = new ReportData();
-        Map<String, DataSet> dataSets = new HashMap<>();
-        dataSets.put("fields", dataSet);
-        reportData.setDataSets(dataSets);
-        
-        return reportData;
-    }
-
-    private byte[] renderReportToXml(ReportData reportData) throws IOException {
-        PatientIdStickerXmlReportRenderer renderer = new PatientIdStickerXmlReportRenderer();
-        ByteArrayOutputStream xmlOutputStream = new ByteArrayOutputStream();
-        
-        try {
-            renderer.render(reportData, null, xmlOutputStream);
-            return xmlOutputStream.toByteArray();
-        } 
-        finally {
-            IOUtils.closeQuietly(xmlOutputStream);
-        }
-    }
-
-    private byte[] transformXmlToPdf(byte[] xmlBytes) 
-            throws IOException, TransformerException, URISyntaxException, SAXException, ConfigurationException {
-        
-        String stylesheetName = getStylesheetName();
-        InputStream xslStream = null;
-        ByteArrayInputStream xmlInputStream = null;
-        ByteArrayOutputStream pdfOutputStream = null;
-        
-        try {
-            xslStream = getXslInputStream(stylesheetName);
-            xmlInputStream = new ByteArrayInputStream(xmlBytes);
-            pdfOutputStream = new ByteArrayOutputStream();
-            
-            StreamSource xmlSource = new StreamSource(xmlInputStream);
-            StreamSource xslSource = new StreamSource(xslStream);
-            
-            writeToOutputStream(xmlSource, xslSource, pdfOutputStream);
-            return pdfOutputStream.toByteArray();
-        } 
-        finally {
-            closeQuietly(pdfOutputStream, "PDF output stream");
-            closeQuietly(xmlInputStream, "XML input stream");
-            closeQuietly(xslStream, "XSL input stream");
-        }
-    }
-
-    private String getStylesheetName() {
-        String stylesheetName = inzService.getValueFromKey("report.patientIdSticker.stylesheet");
-        return stylesheetName != null ? stylesheetName : PatientDocumentsConstants.PATIENT_ID_STICKER_XSL_PATH;
-    }
-
-    private InputStream getXslInputStream(String stylesheetName) throws IOException {
-        InputStream xslStream = OpenmrsClassLoader.getInstance().getResourceAsStream(stylesheetName);
-        if (xslStream == null) {
-            throw new IOException("XSL stylesheet not found: " + stylesheetName);
-        }
-        return xslStream;
-    }
-
-    private void writeToOutputStream(StreamSource xmlSource, StreamSource xslSource, OutputStream outStream)
-            throws TransformerException, SAXException, IOException, ConfigurationException, URISyntaxException {
-        
-        InputStream fopConfigStream = null;
-        InputStream fontsStream = null;
-        
-        try {
-            fopConfigStream = OpenmrsClassLoader.getInstance().getResourceAsStream(FOP_CONFIG_PATH);
-            if (fopConfigStream == null) {
-                throw new IOException("FOP configuration file not found: " + FOP_CONFIG_PATH);
-            }
-            
-            URI fontBaseUri = OpenmrsClassLoader.getInstance().getResource("fonts").toURI();
-            Configuration cfg = new DefaultConfigurationBuilder().build(fopConfigStream);
-            
-            FopFactory fopFactory = new FopFactoryBuilder(fontBaseUri)
-                .setConfiguration(cfg)
-                .build();
-            
-            FOUserAgent foUserAgent = fopFactory.newFOUserAgent();
-            Fop fop = fopFactory.newFop(MimeConstants.MIME_PDF, foUserAgent, outStream);
-            
-            Transformer transformer = TransformerFactory.newInstance().newTransformer(xslSource);
-            transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-            
-            Result res = new SAXResult(fop.getDefaultHandler());
-            transformer.transform(xmlSource, res);
-        } 
-        finally {
-            closeQuietly(fopConfigStream, "FOP config stream");
-            closeQuietly(fontsStream, "Fonts stream");
-        }
-    }
-
-    private void closeQuietly(InputStream stream, String streamName) {
-        if (stream != null) {
-            IOUtils.closeQuietly(stream);
-        }
-    }
-
-    private void closeQuietly(OutputStream stream, String streamName) {
-        if (stream != null) {
-            IOUtils.closeQuietly(stream);
-        }
-    }
+	
+	private static final Logger log = LoggerFactory.getLogger(PatientIdStickerPdfReport.class);
+	
+	private static final String FOP_CONFIG_PATH = "conf/fop.xconf.xml";
+	
+	@Autowired
+	private PatientIdStickerDataSetEvaluator evaluator;
+	
+	@Autowired
+	private InitializerService inzService;
+	
+	public byte[] getBytes(Patient patient) throws RuntimeException {
+		validatePatientAndPrivileges(patient);
+		
+		try {
+			ReportData reportData = createReportData(patient);
+			byte[] xmlBytes = renderReportToXml(reportData);
+			return transformXmlToPdf(xmlBytes);
+		}
+		catch (Exception e) {
+			String patientId = patient != null ? patient.getUuid() : "null";
+			log.error("Error generating patient ID sticker for patient: {}", patientId, e);
+			throw new RuntimeException("Failed to generate patient ID sticker");
+		}
+	}
+	
+	private void validatePatientAndPrivileges(Patient patient) {
+		Context.requirePrivilege(PatientDocumentsPrivilegeConstants.VIEW_PATIENT_ID_STICKER);
+		if (patient == null) {
+			throw new IllegalArgumentException("Patient cannot be null");
+		}
+	}
+	
+	private ReportData createReportData(Patient patient) throws EvaluationException {
+		EvaluationContext context = new EvaluationContext();
+		context.addParameterValue("patientUuid", patient.getUuid());
+		
+		PatientIdStickerDataSetDefinition dsd = new PatientIdStickerDataSetDefinition();
+		DataSet dataSet = evaluator.evaluate(dsd, context);
+		
+		ReportData reportData = new ReportData();
+		Map<String, DataSet> dataSets = new HashMap<>();
+		dataSets.put("fields", dataSet);
+		reportData.setDataSets(dataSets);
+		
+		return reportData;
+	}
+	
+	private byte[] renderReportToXml(ReportData reportData) throws IOException {
+		PatientIdStickerXmlReportRenderer renderer = new PatientIdStickerXmlReportRenderer();
+		ByteArrayOutputStream xmlOutputStream = new ByteArrayOutputStream();
+		
+		try {
+			renderer.render(reportData, null, xmlOutputStream);
+			return xmlOutputStream.toByteArray();
+		}
+		finally {
+			IOUtils.closeQuietly(xmlOutputStream);
+		}
+	}
+	
+	private byte[] transformXmlToPdf(byte[] xmlBytes)
+	        throws IOException, TransformerException, URISyntaxException, SAXException, ConfigurationException {
+		
+		String stylesheetName = getStylesheetName();
+		InputStream xslStream = null;
+		ByteArrayInputStream xmlInputStream = null;
+		ByteArrayOutputStream pdfOutputStream = null;
+		
+		try {
+			xslStream = getXslInputStream(stylesheetName);
+			xmlInputStream = new ByteArrayInputStream(xmlBytes);
+			pdfOutputStream = new ByteArrayOutputStream();
+			
+			StreamSource xmlSource = new StreamSource(xmlInputStream);
+			StreamSource xslSource = new StreamSource(xslStream);
+			
+			writeToOutputStream(xmlSource, xslSource, pdfOutputStream);
+			return pdfOutputStream.toByteArray();
+		}
+		finally {
+			closeQuietly(pdfOutputStream, "PDF output stream");
+			closeQuietly(xmlInputStream, "XML input stream");
+			closeQuietly(xslStream, "XSL input stream");
+		}
+	}
+	
+	private String getStylesheetName() {
+		String stylesheetName = inzService.getValueFromKey("report.patientIdSticker.stylesheet");
+		return stylesheetName != null ? stylesheetName : PatientDocumentsConstants.PATIENT_ID_STICKER_XSL_PATH;
+	}
+	
+	private InputStream getXslInputStream(String stylesheetName) throws IOException {
+		InputStream xslStream = OpenmrsClassLoader.getInstance().getResourceAsStream(stylesheetName);
+		if (xslStream == null) {
+			throw new IOException("XSL stylesheet not found: " + stylesheetName);
+		}
+		
+		// Read the stream content and clean it to remove BOM if present
+		try {
+			String xslContent = IOUtils.toString(xslStream, "UTF-8");
+			
+			// Remove BOM if present
+			if (xslContent.startsWith("\uFEFF")) {
+				xslContent = xslContent.substring(1);
+				log.debug("Removed BOM from XSL stylesheet: {}", stylesheetName);
+			}
+			
+			// Trim any leading whitespace
+			xslContent = xslContent.trim();
+			
+			// Return a new ByteArrayInputStream with clean content
+			return new ByteArrayInputStream(xslContent.getBytes("UTF-8"));
+			
+		}
+		catch (IOException e) {
+			IOUtils.closeQuietly(xslStream);
+			throw e;
+		}
+		finally {
+			IOUtils.closeQuietly(xslStream);
+		}
+	}
+	
+	private void writeToOutputStream(StreamSource xmlSource, StreamSource xslSource, OutputStream outStream)
+	        throws TransformerException, SAXException, IOException, ConfigurationException, URISyntaxException {
+		InputStream fopConfigStream = null;
+		
+		try {
+			if (xslSource == null) {
+				throw new IllegalArgumentException("XSL source cannot be null");
+			}
+			
+			fopConfigStream = OpenmrsClassLoader.getInstance().getResourceAsStream(FOP_CONFIG_PATH);
+			if (fopConfigStream == null) {
+				throw new IOException("FOP configuration file not found: " + FOP_CONFIG_PATH);
+			}
+			
+			URI fontBaseUri = OpenmrsClassLoader.getInstance().getResource("fonts").toURI();
+			Configuration cfg = new DefaultConfigurationBuilder().build(fopConfigStream);
+			
+			FopFactory fopFactory = new FopFactoryBuilder(fontBaseUri).setConfiguration(cfg).build();
+			
+			FOUserAgent foUserAgent = fopFactory.newFOUserAgent();
+			Fop fop = fopFactory.newFop(MimeConstants.MIME_PDF, foUserAgent, outStream);
+			
+			// Create transformer factory and set features to handle encoding issues
+			TransformerFactory factory = TransformerFactory.newInstance();
+			
+			Transformer transformer = factory.newTransformer(xslSource);
+			transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+			transformer.setOutputProperty(OutputKeys.METHOD, "xml");
+			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+			
+			Result res = new SAXResult(fop.getDefaultHandler());
+			transformer.transform(xmlSource, res);
+			
+		}
+		catch (TransformerConfigurationException e) {
+			log.error("Error creating transformer. Check XSL source for BOM or invalid characters", e);
+			// throw new TransformerException("Invalid XSL source: " + e.getMessage(), e);
+		}
+		finally {
+			closeQuietly(fopConfigStream, "FOP config stream");
+		}
+	}
+	
+	private void closeQuietly(InputStream stream, String streamName) {
+		if (stream != null) {
+			IOUtils.closeQuietly(stream);
+		}
+	}
+	
+	private void closeQuietly(OutputStream stream, String streamName) {
+		if (stream != null) {
+			IOUtils.closeQuietly(stream);
+		}
+	}
 }

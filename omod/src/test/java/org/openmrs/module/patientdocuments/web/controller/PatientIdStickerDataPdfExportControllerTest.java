@@ -1,7 +1,18 @@
+/**
+ * This Source Code Form is subject to the terms of the Mozilla Public License,
+ * v. 2.0. If a copy of the MPL was not distributed with this file, You can
+ * obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under
+ * the terms of the Healthcare Disclaimer located at http://openmrs.org/license.
+ *
+ * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
+ * graphic logo is a trademark of OpenMRS Inc.
+ */
 package org.openmrs.module.patientdocuments.web.controller;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -18,10 +29,7 @@ import org.openmrs.module.reporting.report.manager.ReportManagerUtil;
 import org.openmrs.web.test.BaseModuleWebContextSensitiveTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.ui.ModelMap;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,21 +89,79 @@ public class PatientIdStickerDataPdfExportControllerTest extends BaseModuleWebCo
 		ctrl.getPatientIdSticker(response, patientUuid, false);
 		
 		byte[] pdfData = response.getContentAsByteArray();
-		log.info("PDF Data (Base64): {}", java.util.Base64.getEncoder().encodeToString(pdfData));
 		
-		System.out.println("PDF Data (Base64): " + java.util.Base64.getEncoder().encodeToString(pdfData));
-		assertNotNull(pdfData);
-		// assertTrue(pdfData.length > 0);
+		// Debug logging
+		log.info("Response status: {}", response.getStatus());
+		log.info("Response content type: {}", response.getContentType());
+		log.info("PDF Data length: {}", pdfData.length);
 		
-		PdfReader reader = new PdfReader(pdfData);
-		PdfTextExtractor extractor = new PdfTextExtractor(reader, true);
+		// Validate response
+		assertNotNull("PDF data should not be null", pdfData);
+		assertTrue("PDF data should not be empty", pdfData.length > 0);
 		
-		String allText = "";
-		for (Integer pageNum = 1; pageNum < reader.getNumberOfPages() + 1; pageNum++) {
-			allText += extractor.getTextFromPage(pageNum) + "\n\r";
+		// Check if response contains error content instead of PDF
+		if (response.getStatus() != 200) {
+			String responseContent = response.getContentAsString();
+			log.error("HTTP Error {}: {}", response.getStatus(), responseContent);
+			fail("Controller returned HTTP error " + response.getStatus() + ": " + responseContent);
 		}
 		
-		reader.close();
-		return allText;
+		// Validate PDF header
+		if (pdfData.length < 4) {
+			log.error("PDF data too short: {} bytes", pdfData.length);
+			fail("PDF data is too short to contain valid PDF header");
+		}
+		
+		// Check for PDF magic number
+		String pdfHeader = new String(pdfData, 0, Math.min(pdfData.length, 10), "ISO-8859-1");
+		if (!pdfHeader.startsWith("%PDF-")) {
+			log.error("Invalid PDF header. Data starts with: {}", pdfHeader);
+			
+			// If it looks like HTML/text error, log it
+			if (pdfHeader.startsWith("<") || pdfHeader.startsWith("Error") || pdfHeader.startsWith("Exception")) {
+				String errorContent = new String(pdfData, 0, Math.min(pdfData.length, 500), "UTF-8");
+				log.error("Response appears to be error content: {}", errorContent);
+				fail("Controller returned error content instead of PDF: " + errorContent);
+			}
+			
+			// Log as Base64 for debugging
+			log.error("PDF Data (Base64): {}", java.util.Base64.getEncoder().encodeToString(pdfData));
+			fail("PDF data does not start with '%PDF-'. Header: " + pdfHeader);
+		}
+		
+		log.info("PDF header validation passed: {}", pdfHeader);
+		
+		// Create PDF reader with error handling
+		PdfReader reader = null;
+		try {
+			reader = new PdfReader(pdfData);
+			PdfTextExtractor extractor = new PdfTextExtractor(reader, true);
+			
+			StringBuilder allText = new StringBuilder();
+			int pageCount = reader.getNumberOfPages();
+			log.info("PDF has {} pages", pageCount);
+			
+			for (int pageNum = 1; pageNum <= pageCount; pageNum++) {
+				String pageText = extractor.getTextFromPage(pageNum);
+				allText.append(pageText).append("\n\r");
+			}
+			
+			return allText.toString();
+			
+		}
+		catch (Exception e) {
+			log.error("Error processing PDF: {}", e.getMessage(), e);
+			throw new IOException("Failed to process PDF: " + e.getMessage(), e);
+		}
+		finally {
+			if (reader != null) {
+				try {
+					reader.close();
+				}
+				catch (Exception e) {
+					log.warn("Error closing PDF reader: {}", e.getMessage());
+				}
+			}
+		}
 	}
 }

@@ -21,4 +21,12 @@
         <!--  default properties must be set in the hibernate.default.properties -->
     </bean>
 
+    <!--
+    Make sure test-hibernate.cfg.xml is available in the classpath for tests.
+    If not, copy it from api/src/test/resources to omod/src/test/resources.
+    -->
+
+    <!-- Import API module's Spring context for bean/component scanning -->
+    <import resource="classpath:moduleApplicationContext.xml"/>
+
 </beans>

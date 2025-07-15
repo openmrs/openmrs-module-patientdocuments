@@ -63,8 +63,7 @@ public class PatientIdStickerDataPdfExportController {
 		}
 	}
 	
-	// @RequestMapping(value = ROOT_URL + "/" + PATIENT_ID_STICKER_ID)
-	@RequestMapping(value = "module/commonreports" + "/" + PATIENT_ID_STICKER_ID)
+	@RequestMapping(value = ROOT_URL + "/" + PATIENT_ID_STICKER_ID)
 	public ResponseEntity<byte[]> getPatientIdSticker(HttpServletResponse response,
 	        @RequestParam(value = "patientUuid") String patientUuid,
 	        @RequestParam(value = "inline", required = false, defaultValue = "true") boolean inline) {

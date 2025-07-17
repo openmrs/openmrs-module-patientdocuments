@@ -22,6 +22,7 @@ import org.apache.fop.configuration.Configuration;
 import org.apache.fop.configuration.ConfigurationException;
 import org.apache.fop.configuration.DefaultConfigurationBuilder;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.fop.apps.FOUserAgent;
 import org.apache.fop.apps.Fop;
 import org.apache.fop.apps.FopFactory;
@@ -112,7 +113,8 @@ public class PatientIdStickerPdfReport {
 	private byte[] transformXmlToPdf(byte[] xmlBytes)
 	        throws IOException, TransformerException, URISyntaxException, SAXException, ConfigurationException {
 		
-		String stylesheetName = getStylesheetName();
+		// String stylesheetName = getStylesheetName();
+		String stylesheetName = "patientIdStickerFopStylesheet.xsl";
 		InputStream xslStream = null;
 		ByteArrayInputStream xmlInputStream = null;
 		ByteArrayOutputStream pdfOutputStream = null;
@@ -121,6 +123,10 @@ public class PatientIdStickerPdfReport {
 			xslStream = getXslInputStream(stylesheetName);
 			xmlInputStream = new ByteArrayInputStream(xmlBytes);
 			pdfOutputStream = new ByteArrayOutputStream();
+			
+			// Debug log for XML input
+			String xmlPreview = new String(xmlBytes, "UTF-8");
+			log.warn("First 200 chars of XML input: {}", xmlPreview.substring(0, Math.min(200, xmlPreview.length())));
 			
 			StreamSource xmlSource = new StreamSource(xmlInputStream);
 			StreamSource xslSource = new StreamSource(xslStream);
@@ -136,11 +142,13 @@ public class PatientIdStickerPdfReport {
 	}
 	
 	private String getStylesheetName() {
-		String stylesheetName = inzService.getValueFromKey("report.patientIdSticker.stylesheet");
-		return stylesheetName != null ? stylesheetName : PatientDocumentsConstants.PATIENT_ID_STICKER_XSL_PATH;
+		// String stylesheetName = inzService.getValueFromKey("report.patientIdSticker.stylesheet");
+		// return StringUtils.isBlank(stylesheetName) ? stylesheetName : PatientDocumentsConstants.PATIENT_ID_STICKER_XSL_PATH;
+		return PatientDocumentsConstants.PATIENT_ID_STICKER_XSL_PATH;
 	}
 	
 	private InputStream getXslInputStream(String stylesheetName) throws IOException {
+		log.warn("Loading XSL stylesheet: {}", stylesheetName);
 		InputStream xslStream = OpenmrsClassLoader.getInstance().getResourceAsStream(stylesheetName);
 		if (xslStream == null) {
 			throw new IOException("XSL stylesheet not found: " + stylesheetName);
@@ -149,11 +157,12 @@ public class PatientIdStickerPdfReport {
 		// Read the stream content and clean it to remove BOM if present
 		try {
 			String xslContent = IOUtils.toString(xslStream, "UTF-8");
+			log.warn("First 100 chars of XSL content: {}", xslContent.substring(0, Math.min(100, xslContent.length())));
 			
 			// Remove BOM if present
 			if (xslContent.startsWith("\uFEFF")) {
 				xslContent = xslContent.substring(1);
-				log.debug("Removed BOM from XSL stylesheet: {}", stylesheetName);
+				log.warn("Removed BOM from XSL stylesheet: {}", stylesheetName);
 			}
 			
 			// Trim any leading whitespace

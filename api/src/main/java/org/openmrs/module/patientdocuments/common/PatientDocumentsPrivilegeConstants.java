@@ -13,7 +13,7 @@ import org.openmrs.annotation.HasAddOnStartupPrivileges;
 
 @HasAddOnStartupPrivileges
 public class PatientDocumentsPrivilegeConstants {
-
+	
 	public static final String VIEW_PATIENT_ID_STICKER = "App: Can View Patient Identifier Sticker Report";
 	
 }

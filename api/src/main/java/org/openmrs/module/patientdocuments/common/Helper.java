@@ -23,7 +23,7 @@ public class Helper {
 		InputStream is = null;
 		try {
 			is = OpenmrsClassLoader.getInstance().getResourceAsStream(resourceName);
-			return IOUtils.toString(is, "UTF-8");
+			return IOUtils.toString(is, StandardCharsets.UTF_8);
 		}
 		catch (Exception e) {
 			throw new IllegalArgumentException("Unable to load resource: " + resourceName, e);

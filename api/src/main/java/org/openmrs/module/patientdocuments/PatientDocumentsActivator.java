@@ -9,10 +9,10 @@
  */
 package org.openmrs.module.patientdocuments;
 
-import static org.openmrs.module.patientdocuments.PatientDocumentsConstants.MODULE_NAME;
+import static org.openmrs.module.patientdocuments.common.PatientDocumentsConstants.MODULE_NAME;
 
-import org.openmrs.api.context.Context;
 import org.openmrs.module.BaseModuleActivator;
+import org.openmrs.module.patientdocuments.reports.PatientIdStickerReportManager;
 import org.openmrs.module.reporting.report.manager.ReportManagerUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,16 +30,13 @@ public class PatientDocumentsActivator extends BaseModuleActivator {
 	@Override
 	public void started() {
 		log.info("Started " + MODULE_NAME);
-		for (ActivatedReportManager reportManager : Context.getRegisteredComponents(ActivatedReportManager.class)) {
-			if (reportManager.isActivated()) {
-				log.info("Setting up report " + reportManager.getName() + "...");
-				try {
-					ReportManagerUtil.setupReport(reportManager);
-				}
-				catch (Exception e) {
-					log.error("Failed to setup '" + reportManager.getName() + "' report because of: " + e.getMessage());
-				}
-			}
+		PatientIdStickerReportManager reportManager = new PatientIdStickerReportManager();
+		log.info("Setting up report " + reportManager.getName() + "...");
+		try {
+			ReportManagerUtil.setupReport(reportManager);
+		}
+		catch (Exception e) {
+			log.error("Failed to setup '" + reportManager.getName() + "' report because of: " + e.getMessage());
 		}
 	}
 	

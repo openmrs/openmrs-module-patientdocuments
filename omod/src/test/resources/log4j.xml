@@ -79,6 +79,13 @@
 		<level value="ERROR" />
 	</logger>
 	
+	<logger name="org.hibernate.tool.hbm2ddl">
+		<level value="FATAL" />
+	</logger>
+	<logger name="org.h2">
+		<level value="FATAL" />
+	</logger>
+	
 	<root>
 		<level value="WARN" />
 		<appender-ref ref="CONSOLE" />

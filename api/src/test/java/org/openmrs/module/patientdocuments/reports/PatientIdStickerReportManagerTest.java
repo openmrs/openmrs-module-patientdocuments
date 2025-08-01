@@ -17,17 +17,14 @@ import org.hamcrest.collection.IsCollectionWithSize;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.openmrs.module.patientdocuments.ActivatedReportManager;
-import org.openmrs.module.patientdocuments.PatientDocumentsConstants;
 import org.openmrs.module.patientdocuments.renderer.PatientIdStickerXmlReportRenderer;
 import org.openmrs.module.reporting.report.ReportDesign;
 import org.openmrs.module.reporting.report.definition.ReportDefinition;
 import org.openmrs.module.reporting.report.definition.service.ReportDefinitionService;
-import org.openmrs.module.reporting.report.manager.ReportManagerUtil;
 import org.openmrs.module.reporting.report.service.ReportService;
 import org.openmrs.test.BaseModuleContextSensitiveTest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.openmrs.module.reporting.report.manager.ReportManagerUtil;
 
 public class PatientIdStickerReportManagerTest extends BaseModuleContextSensitiveTest {
 	
@@ -37,20 +34,15 @@ public class PatientIdStickerReportManagerTest extends BaseModuleContextSensitiv
 	@Autowired
 	private ReportDefinitionService reportDefinitionService;
 	
-	@Autowired
-	@Qualifier(PatientDocumentsConstants.COMPONENT_REPORTMANAGER_PATIENT_ID_STICKER)
-	private ActivatedReportManager reportManager;
-	
 	@Before
 	public void setUp() throws Exception {
 		// executeDataSet("org/openmrs/module/reporting/include/ReportTestDataset-openmrs-2.0.xml");
 		executeDataSet("org/openmrs/module/patientdocuments/include/patientIdStickerManagerTestDataset.xml");
 		// NOTE: Datasets commented out due to missing files. Add them if available for full test coverage.
+		ReportManagerUtil.setupReport(new PatientIdStickerReportManager());
 	}
 	
 	private ReportDesign setupAndReturnReportDesign() {
-		ReportManagerUtil.setupReport(this.reportManager);
-		
 		List<ReportDefinition> reportDefinitions = this.reportDefinitionService
 		        .getDefinitions(PatientIdStickerReportManager.REPORT_DEFINITION_NAME, true);
 		

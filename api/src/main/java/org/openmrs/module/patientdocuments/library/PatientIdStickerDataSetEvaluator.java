@@ -92,43 +92,11 @@ public class PatientIdStickerDataSetEvaluator implements DataSetEvaluator {
 		
 		// Preferred name
 		PersonName preferredName = patient.getPersonName();
-		patientData.put("allNames", preferredName.getFullName());
+		patientData.put("name", preferredName.getFullName());
 		
-		// Preferred address
-		PersonAddress preferredAddress = patient.getPersonAddress();
-		if (preferredAddress != null) {
-			Map<String, String> addressData = new HashMap<>();
-			addressData.put("address1", preferredAddress.getAddress1());
-			addressData.put("address2", preferredAddress.getAddress2());
-			addressData.put("cityVillage", preferredAddress.getCityVillage());
-			addressData.put("stateProvince", preferredAddress.getStateProvince());
-			addressData.put("country", preferredAddress.getCountry());
-			addressData.put("postalCode", preferredAddress.getPostalCode());
-			addressData.put("countyDistrict", preferredAddress.getCountyDistrict());
-			addressData.put("latitude", preferredAddress.getLatitude());
-			addressData.put("longitude", preferredAddress.getLongitude());
-			patientData.put("preferredAddress", addressData);
-		}
-		
-		// All addresses
-		List<Map<String, Object>> allAddresses = new ArrayList<>();
-		for (PersonAddress address : patient.getAddresses()) {
-			if (!address.getVoided()) {
-				Map<String, Object> addressData = new HashMap<>();
-				addressData.put("address1", address.getAddress1());
-				addressData.put("address2", address.getAddress2());
-				addressData.put("cityVillage", address.getCityVillage());
-				addressData.put("stateProvince", address.getStateProvince());
-				addressData.put("country", address.getCountry());
-				addressData.put("postalCode", address.getPostalCode());
-				addressData.put("countyDistrict", address.getCountyDistrict());
-				addressData.put("latitude", address.getLatitude());
-				addressData.put("longitude", address.getLongitude());
-				addressData.put("preferred", address.getPreferred());
-				allAddresses.add(addressData);
-			}
-		}
-		patientData.put("allAddresses", allAddresses);
+		// All addresses with preferred address first
+		List<Map<String, Object>> allAddresses = convertAddressesToList(patient);
+		patientData.put("addresses", allAddresses);
 		
 		// Identifiers
 		List<Map<String, Object>> identifiers = new ArrayList<>();
@@ -157,6 +125,55 @@ public class PatientIdStickerDataSetEvaluator implements DataSetEvaluator {
 		patientData.put("attributes", attributes);
 		
 		return patientData;
+	}
+	
+	/**
+	 * Converts all patient addresses to a list with preferred address first
+	 * 
+	 * @param patient the patient whose addresses to convert
+	 * @return list of address maps with preferred address first
+	 */
+	private List<Map<String, Object>> convertAddressesToList(Patient patient) {
+		List<Map<String, Object>> allAddresses = new ArrayList<>();
+		PersonAddress preferredAddress = patient.getPersonAddress();
+		
+		// Add preferred address first if it exists
+		if (preferredAddress != null && !preferredAddress.getVoided()) {
+			allAddresses.add(convertAddressToMap(preferredAddress));
+		}
+		
+		// Add all other non-voided addresses
+		for (PersonAddress address : patient.getAddresses()) {
+			if (!address.getVoided() && !address.equals(preferredAddress)) {
+				allAddresses.add(convertAddressToMap(address));
+			}
+		}
+		
+		return allAddresses;
+	}
+	
+	/**
+	 * Converts a PersonAddress to a Map representation
+	 * 
+	 * @param address the address to convert
+	 * @return map representation of the address
+	 */
+	private Map<String, Object> convertAddressToMap(PersonAddress address) {
+		Map<String, Object> addressData = new HashMap<>();
+		addressData.put("address1", address.getAddress1());
+		addressData.put("address2", address.getAddress2());
+		addressData.put("cityVillage", address.getCityVillage());
+		addressData.put("stateProvince", address.getStateProvince());
+		addressData.put("country", address.getCountry());
+		addressData.put("postalCode", address.getPostalCode());
+		addressData.put("countyDistrict", address.getCountyDistrict());
+		addressData.put("latitude", address.getLatitude());
+		addressData.put("longitude", address.getLongitude());
+		addressData.put("preferred", address.getPreferred());
+		
+		// TODO: As future work, we should probably consider making the address as formatted by the address template available
+		
+		return addressData;
 	}
 	
 	private String convertToJson(Map<String, Object> data) {

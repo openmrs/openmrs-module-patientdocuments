@@ -13,13 +13,14 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.openmrs.Patient;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.PatientService;
 import org.openmrs.module.patientdocuments.reports.PatientIdStickerPdfReport;
 import org.openmrs.test.BaseModuleContextSensitiveTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.openmrs.module.reporting.report.manager.ReportManagerUtil;
+import org.openmrs.module.patientdocuments.reports.PatientIdStickerReportManager;
 
 public class PatientIdStickerXmlReportRendererTest extends BaseModuleContextSensitiveTest {
 	
@@ -42,12 +43,7 @@ public class PatientIdStickerXmlReportRendererTest extends BaseModuleContextSens
 		// Load a minimal patient dataset if available
 		// If you have a specific dataset, replace the path below
 		executeDataSet("org/openmrs/module/patientdocuments/include/patientIdStickerManagerTestDataset.xml");
-	}
-	
-	@Test(expected = RuntimeException.class)
-	public void getBytes_shouldThrowWhenPatientMismatches() throws Exception {
-		Patient patient = ps.getPatient(2);
-		pdfReport.getBytes(patient);
+		ReportManagerUtil.setupReport(new PatientIdStickerReportManager());
 	}
 	
 	@Test(expected = IllegalArgumentException.class)

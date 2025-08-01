@@ -9,8 +9,6 @@
  */
 package org.openmrs.module.patientdocuments.renderer;
 
-import static org.openmrs.module.patientdocuments.PatientDocumentsConstants.MODULE_ARTIFACT_ID;
-import static org.openmrs.module.patientdocuments.PatientDocumentsConstants.PATIENT_ID_STICKER_ID;
 import static org.openmrs.module.patientdocuments.reports.PatientIdStickerReportManager.DATASET_KEY_STICKER_FIELDS;
 
 import java.io.File;
@@ -43,6 +41,7 @@ import org.openmrs.annotation.Handler;
 import org.openmrs.api.context.Context;
 import org.openmrs.messagesource.MessageSourceService;
 import org.openmrs.module.initializer.api.InitializerService;
+import org.openmrs.module.patientdocuments.common.PatientDocumentsConstants;
 import org.openmrs.module.reporting.common.Localized;
 import org.openmrs.module.reporting.dataset.DataSet;
 import org.openmrs.module.reporting.dataset.DataSetColumn;
@@ -73,7 +72,7 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 	// using "class local singleton"/Flyweight reference
 	private MessageSourceService mss;
 	
-	private InitializerService inzService;
+	private InitializerService initializerService;
 	
 	private MessageSourceService getMessageSourceService() {
 		
@@ -86,11 +85,11 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 	
 	private InitializerService getInitializerService() {
 		
-		if (inzService == null) {
-			inzService = Context.getService(InitializerService.class);
+		if (initializerService == null) {
+			initializerService = Context.getService(InitializerService.class);
 		}
 		
-		return inzService;
+		return initializerService;
 	}
 	
 	/**
@@ -244,7 +243,8 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 		List<String> i18nIds = Arrays.asList("page", "of");
 		
 		for (String id : i18nIds) {
-			String fqnId = String.join(".", MODULE_ARTIFACT_ID, PATIENT_ID_STICKER_ID.toLowerCase(), id);
+			String fqnId = String.join(".", PatientDocumentsConstants.MODULE_ARTIFACT_ID,
+			    PatientDocumentsConstants.PATIENT_ID_STICKER_ID.toLowerCase(), id);
 			Element i18nChild = doc.createElement(id + "String");
 			i18nChild.setTextContent(getMessageSourceService().getMessage(fqnId));
 			i18nStrings.appendChild(i18nChild);

@@ -33,7 +33,7 @@
 
 	<!-- Required Privileges -->
 	<privilege>
-		<name>App: Can View Patient Identifier Sticker Report</name>
+		<name>App: Can generate a Patient Identity Sticker</name>
 		<description>Allows user to access the patient identifier sticker report.</description>
 	</privilege>
 	<!-- /Required Privileges -->

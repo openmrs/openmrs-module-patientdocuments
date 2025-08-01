@@ -16,28 +16,24 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
-import org.openmrs.module.patientdocuments.ActivatedReportManager;
-import org.openmrs.module.patientdocuments.PatientDocumentsConstants;
+import org.openmrs.module.patientdocuments.common.PatientDocumentsConstants;
 import org.openmrs.module.patientdocuments.library.PatientIdStickerDataSetDefinition;
 import org.openmrs.module.patientdocuments.renderer.PatientIdStickerXmlReportRenderer;
 import org.openmrs.module.reporting.evaluation.parameter.Parameter;
 import org.openmrs.module.reporting.report.ReportDesign;
 import org.openmrs.module.reporting.report.definition.ReportDefinition;
+import org.openmrs.module.reporting.report.manager.BaseReportManager;
+
 import org.springframework.stereotype.Component;
 
 @Component(PatientDocumentsConstants.COMPONENT_REPORTMANAGER_PATIENT_ID_STICKER)
-public class PatientIdStickerReportManager extends ActivatedReportManager {
+public class PatientIdStickerReportManager extends BaseReportManager {
 	
 	public static final String REPORT_DESIGN_UUID = "f0f27c39-2b3a-4254-b09f-29dad8adbc7b";
 	
 	public static final String REPORT_DEFINITION_NAME = "Patient Identifier Sticker";
 	
 	public static final String DATASET_KEY_STICKER_FIELDS = "fields";
-	
-	@Override
-	public boolean isActivated() {
-		return super.isActivated();
-	}
 	
 	@Override
 	public String getVersion() {

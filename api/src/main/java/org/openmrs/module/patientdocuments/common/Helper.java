@@ -10,6 +10,7 @@
 package org.openmrs.module.patientdocuments.common;
 
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.io.IOUtils;
 import org.openmrs.util.OpenmrsClassLoader;

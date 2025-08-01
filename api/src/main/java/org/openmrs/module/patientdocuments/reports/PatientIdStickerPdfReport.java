@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import javax.xml.transform.OutputKeys;
@@ -22,7 +23,6 @@ import org.apache.fop.configuration.Configuration;
 import org.apache.fop.configuration.ConfigurationException;
 import org.apache.fop.configuration.DefaultConfigurationBuilder;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.fop.apps.FOUserAgent;
 import org.apache.fop.apps.Fop;
 import org.apache.fop.apps.FopFactory;
@@ -31,7 +31,7 @@ import org.apache.fop.apps.MimeConstants;
 import org.openmrs.Patient;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.initializer.api.InitializerService;
-import org.openmrs.module.patientdocuments.PatientDocumentsConstants;
+import org.openmrs.module.patientdocuments.common.PatientDocumentsConstants;
 import org.openmrs.module.patientdocuments.common.PatientDocumentsPrivilegeConstants;
 import org.openmrs.module.patientdocuments.library.PatientIdStickerDataSetDefinition;
 import org.openmrs.module.patientdocuments.library.PatientIdStickerDataSetEvaluator;
@@ -58,7 +58,7 @@ public class PatientIdStickerPdfReport {
 	private PatientIdStickerDataSetEvaluator evaluator;
 	
 	@Autowired
-	private InitializerService inzService;
+	private InitializerService initializerService;
 	
 	public byte[] getBytes(Patient patient) throws RuntimeException {
 		validatePatientAndPrivileges(patient);
@@ -99,34 +99,19 @@ public class PatientIdStickerPdfReport {
 	
 	private byte[] renderReportToXml(ReportData reportData) throws IOException {
 		PatientIdStickerXmlReportRenderer renderer = new PatientIdStickerXmlReportRenderer();
-		ByteArrayOutputStream xmlOutputStream = new ByteArrayOutputStream();
-		
-		try {
+		try (ByteArrayOutputStream xmlOutputStream = new ByteArrayOutputStream()) {
 			renderer.render(reportData, null, xmlOutputStream);
 			return xmlOutputStream.toByteArray();
-		}
-		finally {
-			IOUtils.closeQuietly(xmlOutputStream);
 		}
 	}
 	
 	private byte[] transformXmlToPdf(byte[] xmlBytes)
 	        throws IOException, TransformerException, URISyntaxException, SAXException, ConfigurationException {
 		
-		// String stylesheetName = getStylesheetName();
-		String stylesheetName = "patientIdStickerFopStylesheet.xsl";
-		InputStream xslStream = null;
-		ByteArrayInputStream xmlInputStream = null;
-		ByteArrayOutputStream pdfOutputStream = null;
-		
-		try {
-			xslStream = getXslInputStream(stylesheetName);
-			xmlInputStream = new ByteArrayInputStream(xmlBytes);
-			pdfOutputStream = new ByteArrayOutputStream();
-			
-			// Debug log for XML input
-			String xmlPreview = new String(xmlBytes, "UTF-8");
-			log.warn("First 200 chars of XML input: {}", xmlPreview.substring(0, Math.min(200, xmlPreview.length())));
+		String stylesheetName = getStylesheetName();
+		try (InputStream xslStream = getXslInputStream(stylesheetName);
+		        ByteArrayInputStream xmlInputStream = new ByteArrayInputStream(xmlBytes);
+		        ByteArrayOutputStream pdfOutputStream = new ByteArrayOutputStream()) {
 			
 			StreamSource xmlSource = new StreamSource(xmlInputStream);
 			StreamSource xslSource = new StreamSource(xslStream);
@@ -134,105 +119,55 @@ public class PatientIdStickerPdfReport {
 			writeToOutputStream(xmlSource, xslSource, pdfOutputStream);
 			return pdfOutputStream.toByteArray();
 		}
-		finally {
-			closeQuietly(pdfOutputStream, "PDF output stream");
-			closeQuietly(xmlInputStream, "XML input stream");
-			closeQuietly(xslStream, "XSL input stream");
-		}
 	}
 	
 	private String getStylesheetName() {
-		// String stylesheetName = inzService.getValueFromKey("report.patientIdSticker.stylesheet");
-		// return StringUtils.isBlank(stylesheetName) ? stylesheetName : PatientDocumentsConstants.PATIENT_ID_STICKER_XSL_PATH;
-		return PatientDocumentsConstants.PATIENT_ID_STICKER_XSL_PATH;
+		String stylesheetName = initializerService.getValueFromKey("report.patientIdSticker.stylesheet");
+		if (stylesheetName == null || stylesheetName.isEmpty()) {
+			stylesheetName = PatientDocumentsConstants.PATIENT_ID_STICKER_XSL_PATH;
+		}
+		return stylesheetName;
 	}
 	
 	private InputStream getXslInputStream(String stylesheetName) throws IOException {
 		log.warn("Loading XSL stylesheet: {}", stylesheetName);
-		InputStream xslStream = OpenmrsClassLoader.getInstance().getResourceAsStream(stylesheetName);
-		if (xslStream == null) {
-			throw new IOException("XSL stylesheet not found: " + stylesheetName);
-		}
-		
-		// Read the stream content and clean it to remove BOM if present
-		try {
-			String xslContent = IOUtils.toString(xslStream, "UTF-8");
-			log.warn("First 100 chars of XSL content: {}", xslContent.substring(0, Math.min(100, xslContent.length())));
-			
-			// Remove BOM if present
-			if (xslContent.startsWith("\uFEFF")) {
-				xslContent = xslContent.substring(1);
-				log.warn("Removed BOM from XSL stylesheet: {}", stylesheetName);
+		try (InputStream xslStream = OpenmrsClassLoader.getInstance().getResourceAsStream(stylesheetName)) {
+			if (xslStream == null) {
+				throw new IOException("XSL stylesheet not found: " + stylesheetName);
 			}
 			
-			// Trim any leading whitespace
+			String xslContent = IOUtils.toString(xslStream, StandardCharsets.UTF_8);
 			xslContent = xslContent.trim();
 			
-			// Return a new ByteArrayInputStream with clean content
-			return new ByteArrayInputStream(xslContent.getBytes("UTF-8"));
-			
-		}
-		catch (IOException e) {
-			IOUtils.closeQuietly(xslStream);
-			throw e;
-		}
-		finally {
-			IOUtils.closeQuietly(xslStream);
+			return new ByteArrayInputStream(xslContent.getBytes(StandardCharsets.UTF_8));
 		}
 	}
 	
 	private void writeToOutputStream(StreamSource xmlSource, StreamSource xslSource, OutputStream outStream)
 	        throws TransformerException, SAXException, IOException, ConfigurationException, URISyntaxException {
-		InputStream fopConfigStream = null;
-		
-		try {
+		try (InputStream fopConfigStream = OpenmrsClassLoader.getInstance().getResourceAsStream(FOP_CONFIG_PATH)) {
 			if (xslSource == null) {
 				throw new IllegalArgumentException("XSL source cannot be null");
 			}
-			
-			fopConfigStream = OpenmrsClassLoader.getInstance().getResourceAsStream(FOP_CONFIG_PATH);
 			if (fopConfigStream == null) {
 				throw new IOException("FOP configuration file not found: " + FOP_CONFIG_PATH);
 			}
-			
 			URI fontBaseUri = OpenmrsClassLoader.getInstance().getResource("fonts").toURI();
 			Configuration cfg = new DefaultConfigurationBuilder().build(fopConfigStream);
-			
 			FopFactory fopFactory = new FopFactoryBuilder(fontBaseUri).setConfiguration(cfg).build();
-			
 			FOUserAgent foUserAgent = fopFactory.newFOUserAgent();
 			Fop fop = fopFactory.newFop(MimeConstants.MIME_PDF, foUserAgent, outStream);
-			
-			// Create transformer factory and set features to handle encoding issues
 			TransformerFactory factory = TransformerFactory.newInstance();
-			
 			Transformer transformer = factory.newTransformer(xslSource);
 			transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
 			transformer.setOutputProperty(OutputKeys.METHOD, "xml");
 			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-			
 			Result res = new SAXResult(fop.getDefaultHandler());
 			transformer.transform(xmlSource, res);
-			
 		}
 		catch (TransformerConfigurationException e) {
 			log.error("Error creating transformer. Check XSL source for BOM or invalid characters", e);
-			// throw new TransformerException("Invalid XSL source: " + e.getMessage(), e);
-		}
-		finally {
-			closeQuietly(fopConfigStream, "FOP config stream");
-		}
-	}
-	
-	private void closeQuietly(InputStream stream, String streamName) {
-		if (stream != null) {
-			IOUtils.closeQuietly(stream);
-		}
-	}
-	
-	private void closeQuietly(OutputStream stream, String streamName) {
-		if (stream != null) {
-			IOUtils.closeQuietly(stream);
+			throw e;
 		}
 	}
 }

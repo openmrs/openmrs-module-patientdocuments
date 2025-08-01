@@ -9,8 +9,8 @@
  */
 package org.openmrs.module.patientdocuments.web.controller;
 
-import static org.openmrs.module.patientdocuments.PatientDocumentsConstants.PATIENT_ID_STICKER_ID;
-import static org.openmrs.module.patientdocuments.PatientDocumentsConstants.ROOT_URL;
+import static org.openmrs.module.patientdocuments.common.PatientDocumentsConstants.PATIENT_ID_STICKER_ID;
+import static org.openmrs.module.patientdocuments.common.PatientDocumentsConstants.ROOT_URL;
 
 import javax.servlet.http.HttpServletResponse;
 

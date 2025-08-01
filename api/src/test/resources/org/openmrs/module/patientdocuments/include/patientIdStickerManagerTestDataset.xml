@@ -8,6 +8,6 @@
 
 	<patient patient_id="100001" date_created="2014-01-09 00:00:00.0" voided="0"/>
 
-	<patient_identifier patient_identifier_id="100001" patient_id="100001" identifier="100001" identifier_type="2" preferred="0" creator="1" uuid="E866EE0E-528D-48C3-AC5B-9D1128B9683C" date_created="2020-01-21 00:00:00.0" voided="0"/>
+	<patient_identifier patient_identifier_id="100001" patient_id="100001" identifier="100001" identifier_type="2" preferred="1" creator="1" uuid="E866EE0E-528D-48C3-AC5B-9D1128B9683C" date_created="2020-01-21 00:00:00.0" voided="0"/>
 
 </dataset>

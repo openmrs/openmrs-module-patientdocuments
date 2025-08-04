@@ -355,13 +355,9 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 						
 						// Process name
 						if (shouldIncludeColumn("patientdocuments.patientIdSticker.fields.patientname")) {
-							Map<String, String> nameData = (Map<String, String>) patientData.get("preferredName");
+							String nameData = (String) patientData.get("preferredName");
 							if (nameData != null) {
-								String givenName = nameData.get("givenName");
-								String familyName = nameData.get("familyName");
-								String fullName = (givenName != null ? givenName : "")
-								        + (familyName != null ? " " + familyName : "");
-								addField(doc, fields, patientNameKey, fullName.trim());
+								addField(doc, fields, patientNameKey, nameData);
 							}
 						}
 						

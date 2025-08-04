@@ -92,7 +92,7 @@ public class PatientIdStickerDataSetEvaluator implements DataSetEvaluator {
 		
 		// Preferred name
 		PersonName preferredName = patient.getPersonName();
-		patientData.put("name", preferredName.getFullName());
+		patientData.put("preferredName", preferredName.getFullName());
 		
 		// All addresses with preferred address first
 		List<Map<String, Object>> allAddresses = convertAddressesToList(patient);

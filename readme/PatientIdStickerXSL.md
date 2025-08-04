@@ -48,13 +48,22 @@ To create a custom stylesheet:
 - **Configurable Fields**: Flexible field display with special handling for demographics
 - **Secondary Identifier**: Support for displaying secondary patient identifiers
 - **Custom Font Support**: Configurable font families and sizes for labels and values
+- **Internationalization**: Support for translated field labels and messages
 
 ## XML Input Structure
 
 The stylesheet expects an XML document with the following structure:
 
 ```xml
-<patientIdStickers sticker-height="..." sticker-width="..." layout-type="...">
+<patientIdStickers 
+    sticker-height="..." 
+    sticker-width="..." 
+    label-font-size="..." 
+    value-font-size="..." 
+    label-font-family="..." 
+    value-font-family="..." 
+    field-vertical-gap="...">
+    
     <patientIdSticker 
         patientIdKey="..." 
         patientSecondaryIdKey="..."
@@ -62,15 +71,22 @@ The stylesheet expects an XML document with the following structure:
         genderKey="..." 
         dobKey="..." 
         ageKey="..." 
-        barcode-type="..." 
-        barcode-height="...">
+        addressKey="..."
+        page="...">
+        
         <header>
             <branding>
                 <logo>...</logo>
             </branding>
-            <headerText>...</headerText>
         </header>
+        
+        <i18n>
+            <pageString>...</pageString>
+            <ofString>...</ofString>
+        </i18n>
+        
         <barcode barcodeValue="..."/>
+        
         <fields>
             <field label="Patient ID">...</field>
             <field label="Patient Number">...</field>
@@ -78,6 +94,7 @@ The stylesheet expects an XML document with the following structure:
             <field label="Gender">...</field>
             <field label="Date of Birth">...</field>
             <field label="Age">...</field>
+            <field label="Address">...</field>
             <!-- Additional fields as needed -->
         </fields>
     </patientIdSticker>
@@ -90,13 +107,13 @@ The stylesheet expects an XML document with the following structure:
 
 | Attribute | Description | Default |
 |-----------|-------------|---------|
-| `sticker-height` | Height of the sticker in millimeters | Required |
-| `sticker-width` | Width of the sticker in millimeters | Required |
+| `sticker-height` | Height of the sticker in millimeters | `297mm` |
+| `sticker-width` | Width of the sticker in millimeters | `210mm` |
 | `label-font-size` | Font size for field labels | Calculated from sticker width |
 | `value-font-size` | Font size for field values | Calculated from sticker width |
 | `label-font-family` | Font family for field labels | IBM Plex Sans Arabic |
 | `value-font-family` | Font family for field values | IBM Plex Sans Arabic Bold |
-| `field-vertical-gap` | Vertical space between fields | 1mm |
+| `field-vertical-gap` | Vertical space between fields | `1mm` |
 
 ### Patient ID Sticker Attributes
 
@@ -108,32 +125,51 @@ The stylesheet expects an XML document with the following structure:
 | `genderKey` | Field label for gender | - |
 | `dobKey` | Field label for date of birth | - |
 | `ageKey` | Field label for age | - |
-| `barcode-type` | Type of barcode to generate | Code128 |
-| `barcode-height` | Height of barcode in millimeters | 28% of sticker height |
+| `addressKey` | Field label for address | - |
+| `page` | Page identifier | - |
 
 ## Layout Types
 
-### Standard Layout
+### Standard Layout (patientIdStickerFopStylesheet.xsl)
 
 The standard layout displays all fields in a vertical list, with each field having its label above and value below. Patient ID and Patient Name fields are prioritized at the top.
 
-### MSF Layout
+Key features:
+- Vertical field arrangement
+- Field deduplication (prevents duplicate fields with same label)
+- Responsive font sizing based on sticker dimensions
+- Optional header with logo support
+- Optional barcode generation
+
+### MSF Layout (msfStickerFopStylesheet.xsl)
 
 The MSF (Médecins Sans Frontières) layout follows specific guidelines:
-- Patient ID and Name at the top
-- Secondary identifier displayed prominently
-- Demographic details (Gender, DOB, Age) displayed in a single row at the bottom
+- Patient Number (secondary identifier) displayed prominently at the top
+- Patient ID and Name displayed next
 - Other fields displayed vertically in the middle
+- Demographic details (Gender, DOB, Age) displayed in a single row at the bottom
 - Special date formatting for Date of Birth (removes time component)
+
+Key features:
+- Special arrangement for demographic fields in a table row
+- Secondary identifier prioritization
+- Date of birth time component removal
+- Enhanced typography with bold values
 
 ## Sections
 
 ### Header Section
 
 The optional header section can contain:
-- An organizational logo on the left
+- An organizational logo on the left (loaded from HTTP URL)
 - Custom header text on the right
-- Requested by information with user details
+- Automatic logo downloading and caching for HTTP URLs
+
+### Internationalization Section
+
+Contains translated strings for:
+- Page numbering (`pageString`)
+- Page separator (`ofString`)
 
 ### Barcode Section
 
@@ -141,6 +177,7 @@ When a barcode value is provided:
 - Generates a barcode using Barcode4J library
 - Adds a separator line below the barcode
 - Adjusts the layout to accommodate the barcode space
+- Default barcode type is Code128
 
 ### Main Data Section
 
@@ -149,6 +186,7 @@ Displays patient information fields with:
 - Values in larger, bold font
 - Special arrangement for demographic fields in MSF layout
 - Support for secondary identifiers
+- Field deduplication in standard layout
 
 ## Responsive Design Features
 
@@ -162,17 +200,19 @@ The stylesheet includes several responsive design elements:
 
 ## Special Processing
 
-- **Date of Birth**: Removes time component (`00:00:00.0`) if present
+- **Date of Birth**: Removes time component (`00:00:00.0`) if present (MSF layout)
 - **Field Deduplication**: In standard layout, prevents duplicate fields with the same label
 - **Demographic Grouping**: In MSF layout, groups Gender, DOB, and Age fields in a single row
 - **Secondary Identifier**: Special handling for secondary patient identifiers
 - **Internationalization**: Support for translated field labels and messages
+- **Logo Handling**: Automatic download and caching of logos from HTTP URLs
 
 ## Technical Requirements
 
 - **XSL-FO Processor**: Compatible with Apache FOP or similar XSL-FO processors
 - **Barcode4J Library**: Required for barcode generation
 - **Fonts**: Requires IBM Plex Sans Arabic and IBM Plex Sans Arabic Bold (or configured alternatives)
+- **Network Access**: Required for logo downloading from HTTP URLs
 
 ## Examples
 
@@ -192,3 +232,50 @@ The stylesheet includes several responsive design elements:
     </patientIdSticker>
 </patientIdStickers>
 ```
+
+### Complete Example with Header and Barcode
+
+```xml
+<patientIdStickers 
+    sticker-height="50mm" 
+    sticker-width="70mm"
+    label-font-size="6"
+    value-font-size="8">
+    
+    <patientIdSticker 
+        patientIdKey="Patient ID" 
+        patientSecondaryIdKey="Patient Number"
+        patientNameKey="Patient Name"
+        genderKey="Gender"
+        dobKey="Date of Birth"
+        ageKey="Age">
+        
+        <header>
+            <branding>
+                <logo>/path/to/logo.png</logo>
+            </branding>
+        </header>
+        
+        <barcode barcodeValue="12345"/>
+        
+        <fields>
+            <field label="Patient ID">12345</field>
+            <field label="Patient Number">P789</field>
+            <field label="Patient Name">John Doe</field>
+            <field label="Gender">Male</field>
+            <field label="Date of Birth">1990-01-01</field>
+            <field label="Age">33</field>
+        </fields>
+    </patientIdSticker>
+</patientIdStickers>
+```
+
+## Implementation Notes
+
+- The XML structure is generated by the `PatientIdStickerXmlReportRenderer`
+- Configuration is managed through the Initializer module
+- Field visibility is controlled by boolean configuration properties
+- Secondary identifier type is specified by UUID in configuration
+- Logo URLs must be HTTP URLs starting with "http" to be processed
+- Barcode generation uses the preferred patient identifier
+- Multiple stickers can be generated based on the `pages` configuration

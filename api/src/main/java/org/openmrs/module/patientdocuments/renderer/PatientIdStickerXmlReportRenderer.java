@@ -65,11 +65,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Localized("reporting.XmlReportRenderer")
 public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 	
-	// @Autowired, immediate, static, and ctor based initialization
-	// of this reference all fail or cause the server to freeze
-	// when this module is loaded
-	
-	// using "class local singleton"/Flyweight reference
 	private MessageSourceService mss;
 	
 	private InitializerService initializerService;
@@ -129,7 +124,7 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 			docBuilder = docFactory.newDocumentBuilder();
 		}
 		catch (ParserConfigurationException e) {
-			throw new RenderingException(e.getLocalizedMessage());
+			throw new RenderingException(e.getLocalizedMessage(), new Throwable(e));
 		}
 		
 		// Root element
@@ -456,7 +451,7 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 			transformer = TransformerFactory.newInstance().newTransformer();
 		}
 		catch (TransformerConfigurationException | TransformerFactoryConfigurationError e) {
-			throw new RenderingException(e.getLocalizedMessage());
+			throw new RenderingException(e.getLocalizedMessage(), new Throwable(e));
 		}
 		
 		transformer.setOutputProperty(OutputKeys.INDENT, "yes");
@@ -467,14 +462,8 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 			transformer.transform(source, new StreamResult(out));
 		}
 		catch (TransformerException e) {
-			throw new RenderingException(e.getLocalizedMessage());
+			throw new RenderingException(e.getLocalizedMessage(), new Throwable(e));
 		}
-		
-		{
-			System.out.println(out);
-			"".toString();
-		}
-		
 	}
 	
 	private boolean isNotNullOrEmpty(String str) {

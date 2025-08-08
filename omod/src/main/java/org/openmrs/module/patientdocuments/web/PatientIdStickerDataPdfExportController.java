@@ -7,7 +7,7 @@
  * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
  * graphic logo is a trademark of OpenMRS Inc.
  */
-package org.openmrs.module.patientdocuments.web.controller;
+package org.openmrs.module.patientdocuments.web;
 
 import static org.openmrs.module.patientdocuments.common.PatientDocumentsConstants.PATIENT_ID_STICKER_ID;
 import static org.openmrs.module.patientdocuments.common.PatientDocumentsConstants.ROOT_URL;
@@ -17,20 +17,21 @@ import javax.servlet.http.HttpServletResponse;
 import org.openmrs.Patient;
 import org.openmrs.api.PatientService;
 import org.openmrs.module.patientdocuments.reports.PatientIdStickerPdfReport;
+import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
-// public class PatientIdStickerDataPdfExportController extends BaseRestController {
-public class PatientIdStickerDataPdfExportController {
+public class PatientIdStickerDataPdfExportController extends BaseRestController {
 	
 	private static final Logger logger = LoggerFactory.getLogger(PatientIdStickerDataPdfExportController.class);
 	
@@ -59,7 +60,8 @@ public class PatientIdStickerDataPdfExportController {
 		}
 		catch (Exception e) {
 			logger.error("An error occurred while processing the request", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null); // Explicitly return byte[] type
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).contentType(MediaType.TEXT_PLAIN)
+			        .body("Error generating PDF".getBytes());
 		}
 	}
 	

@@ -24,7 +24,7 @@ public class Helper {
 		InputStream is = null;
 		try {
 			is = OpenmrsClassLoader.getInstance().getResourceAsStream(resourceName);
-			return IOUtils.toString(is, StandardCharsets.UTF_8);
+			return IOUtils.toString(is, StandardCharsets.UTF_8.name());
 		}
 		catch (Exception e) {
 			throw new IllegalArgumentException("Unable to load resource: " + resourceName, e);

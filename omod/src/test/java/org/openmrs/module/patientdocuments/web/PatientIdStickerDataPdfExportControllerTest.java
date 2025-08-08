@@ -1,4 +1,4 @@
-package org.openmrs.module.patientdocuments.web.controller;
+package org.openmrs.module.patientdocuments.web;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -16,11 +16,9 @@ import org.junit.runner.RunWith;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.initializer.api.InitializerService;
 import org.openmrs.module.patientdocuments.common.PatientDocumentsConstants;
-import org.openmrs.module.patientdocuments.renderer.PatientIdStickerXmlReportRenderer;
-import org.openmrs.module.patientdocuments.reports.PatientIdStickerPdfReport;
 import org.openmrs.module.patientdocuments.reports.PatientIdStickerReportManager;
 import org.openmrs.module.reporting.report.manager.ReportManagerUtil;
-import org.openmrs.web.test.BaseModuleWebContextSensitiveTest;
+import org.openmrs.test.BaseModuleContextSensitiveTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -31,23 +29,17 @@ import com.lowagie.text.pdf.PdfReader;
 import com.lowagie.text.pdf.parser.PdfTextExtractor;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-public class PatientIdStickerDataPdfExportControllerTest extends BaseModuleWebContextSensitiveTest {
+public class PatientIdStickerDataPdfExportControllerTest extends BaseModuleContextSensitiveTest {
 	
 	@Autowired
-	private PatientIdStickerDataPdfExportController ctrl;
+	private PatientIdStickerDataPdfExportController patientStickerController;
 	
 	@Autowired
 	private InitializerService initializerService;
 	
 	@Autowired
-	PatientIdStickerXmlReportRenderer renderer;
-	
-	@Autowired
 	@Qualifier(PatientDocumentsConstants.COMPONENT_REPORTMANAGER_PATIENT_ID_STICKER)
 	private PatientIdStickerReportManager reportManager;
-	
-	@Autowired
-	PatientIdStickerPdfReport patientIdStickerPdfReport;
 	
 	private static final String TEST_PATIENT_UUID = "5e81906d-84d2-45ed-84da-912109977026";
 	
@@ -79,7 +71,7 @@ public class PatientIdStickerDataPdfExportControllerTest extends BaseModuleWebCo
 		Context.setLocale(Locale.ENGLISH);
 		MockHttpServletResponse response = new MockHttpServletResponse();
 		
-		ResponseEntity<byte[]> result = ctrl.getPatientIdSticker(response, TEST_PATIENT_UUID, false);
+		ResponseEntity<byte[]> result = patientStickerController.getPatientIdSticker(response, TEST_PATIENT_UUID, false);
 		byte[] pdfContent = result.getBody();
 		
 		assertNotNull(pdfContent);
@@ -110,7 +102,7 @@ public class PatientIdStickerDataPdfExportControllerTest extends BaseModuleWebCo
 		Context.setLocale(new Locale("ar", "AR"));
 		MockHttpServletResponse response = new MockHttpServletResponse();
 		
-		ResponseEntity<byte[]> result = ctrl.getPatientIdSticker(response, TEST_PATIENT_UUID, false);
+		ResponseEntity<byte[]> result = patientStickerController.getPatientIdSticker(response, TEST_PATIENT_UUID, false);
 		
 		byte[] pdfContent = result.getBody();
 		assertNotNull(pdfContent);
@@ -141,7 +133,7 @@ public class PatientIdStickerDataPdfExportControllerTest extends BaseModuleWebCo
 		MockHttpServletResponse response = new MockHttpServletResponse();
 		String invalidUuid = "invalid-uuid";
 		
-		ResponseEntity<byte[]> responseEntity = ctrl.getPatientIdSticker(response, invalidUuid, false);
+		ResponseEntity<byte[]> responseEntity = patientStickerController.getPatientIdSticker(response, invalidUuid, false);
 		
 		assertNull("Response entity should be null", responseEntity);
 		assertEquals("Should return HTTP 404 status", HttpStatus.NOT_FOUND.value(), response.getStatus());

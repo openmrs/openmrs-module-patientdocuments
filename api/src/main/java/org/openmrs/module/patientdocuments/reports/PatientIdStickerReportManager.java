@@ -14,8 +14,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
+import org.openmrs.api.context.Context;
 import org.openmrs.module.patientdocuments.common.PatientDocumentsConstants;
 import org.openmrs.module.patientdocuments.library.PatientIdStickerDataSetDefinition;
 import org.openmrs.module.patientdocuments.renderer.PatientIdStickerXmlReportRenderer;
@@ -23,17 +25,19 @@ import org.openmrs.module.reporting.evaluation.parameter.Parameter;
 import org.openmrs.module.reporting.report.ReportDesign;
 import org.openmrs.module.reporting.report.definition.ReportDefinition;
 import org.openmrs.module.reporting.report.manager.BaseReportManager;
-
+import org.openmrs.module.reporting.report.service.ReportService;
 import org.springframework.stereotype.Component;
 
 @Component(PatientDocumentsConstants.COMPONENT_REPORTMANAGER_PATIENT_ID_STICKER)
 public class PatientIdStickerReportManager extends BaseReportManager {
 	
-	public static final String REPORT_DESIGN_UUID = "f0f27c39-2b3a-4254-b09f-29dad8adbc7b";
+	public static final String REPORT_DESIGN_UUID = UUID.randomUUID().toString();
 	
 	public static final String REPORT_DEFINITION_NAME = "Patient Identifier Sticker";
 	
 	public static final String DATASET_KEY_STICKER_FIELDS = "fields";
+	
+	private static final String PATIENT_ID_STICKER_PDF_NAME = "Patient ID Sticker PDF";
 	
 	@Override
 	public String getVersion() {
@@ -85,8 +89,16 @@ public class PatientIdStickerReportManager extends BaseReportManager {
 	
 	@Override
 	public List<ReportDesign> constructReportDesigns(ReportDefinition reportDefinition) {
+		List<ReportDesign> existingDesigns = Context.getService(ReportService.class).getReportDesigns(reportDefinition,
+		    PatientIdStickerXmlReportRenderer.class, true);
+		for (ReportDesign design : existingDesigns) {
+			if (PATIENT_ID_STICKER_PDF_NAME.equals(design.getName())) {
+				return Arrays.asList(design);
+			}
+		}
+		
 		ReportDesign reportDesign = new ReportDesign();
-		reportDesign.setName("Patient ID Sticker PDF");
+		reportDesign.setName(PATIENT_ID_STICKER_PDF_NAME);
 		reportDesign.setUuid(REPORT_DESIGN_UUID);
 		reportDesign.setReportDefinition(reportDefinition);
 		reportDesign.setRendererType(PatientIdStickerXmlReportRenderer.class);

@@ -13,12 +13,18 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.joda.time.DateTime;
+import org.joda.time.Days;
+import org.joda.time.Hours;
+import org.joda.time.Minutes;
+import org.joda.time.Months;
+import org.joda.time.Weeks;
+import org.joda.time.Years;
 import org.openmrs.Patient;
 import org.openmrs.PatientIdentifier;
 import org.openmrs.PersonAddress;
@@ -27,7 +33,6 @@ import org.openmrs.PersonName;
 import org.openmrs.annotation.Handler;
 import org.openmrs.api.PatientService;
 import org.openmrs.api.context.Context;
-import org.openmrs.messagesource.MessageSourceService;
 import org.openmrs.module.reporting.dataset.DataSet;
 import org.openmrs.module.reporting.dataset.DataSetColumn;
 import org.openmrs.module.reporting.dataset.DataSetRow;
@@ -99,29 +104,11 @@ public class PatientIdStickerDataSetEvaluator implements DataSetEvaluator {
 		patientData.put("addresses", allAddresses);
 		
 		// Identifiers
-		List<Map<String, Object>> identifiers = new ArrayList<>();
-		for (PatientIdentifier identifier : patient.getIdentifiers()) {
-			if (!identifier.getVoided()) {
-				Map<String, Object> identifierData = new HashMap<>();
-				identifierData.put("identifier", identifier.getIdentifier());
-				identifierData.put("identifierType", identifier.getIdentifierType().getName());
-				identifierData.put("identifierTypeUuid", identifier.getIdentifierType().getUuid());
-				identifierData.put("preferred", identifier.getPreferred());
-				identifierData.put("location", identifier.getLocation() != null ? identifier.getLocation().getName() : null);
-				identifiers.add(identifierData);
-			}
-		}
+		List<Map<String, Object>> identifiers = convertIdentifiersToList(patient);
 		patientData.put("identifiers", identifiers);
 		
 		// Person attributes
-		List<Map<String, Object>> attributes = new ArrayList<>();
-		for (PersonAttribute attribute : patient.getActiveAttributes()) {
-			Map<String, Object> attributeData = new HashMap<>();
-			attributeData.put("attributeType", attribute.getAttributeType().getName());
-			attributeData.put("attributeTypeUuid", attribute.getAttributeType().getUuid());
-			attributeData.put("value", attribute.getValue());
-			attributes.add(attributeData);
-		}
+		List<Map<String, Object>> attributes = convertAttributesToList(patient);
 		patientData.put("attributes", attributes);
 		
 		return patientData;
@@ -176,6 +163,78 @@ public class PatientIdStickerDataSetEvaluator implements DataSetEvaluator {
 		return addressData;
 	}
 	
+	/**
+	 * Converts all patient identifiers to a list with preferred identifier first
+	 * 
+	 * @param patient the patient whose identifiers to convert
+	 * @return list of identifier maps with preferred identifier first
+	 */
+	private List<Map<String, Object>> convertIdentifiersToList(Patient patient) {
+		List<Map<String, Object>> allIdentifiers = new ArrayList<>();
+		PatientIdentifier preferredIdentifier = patient.getPatientIdentifier();
+		
+		// Add preferred identifier first if it exists
+		if (preferredIdentifier != null && !preferredIdentifier.getVoided()) {
+			allIdentifiers.add(convertIdentifierToMap(preferredIdentifier));
+		}
+		
+		// Add all other non-voided identifiers
+		for (PatientIdentifier identifier : patient.getIdentifiers()) {
+			if (!identifier.getVoided() && !identifier.equals(preferredIdentifier)) {
+				allIdentifiers.add(convertIdentifierToMap(identifier));
+			}
+		}
+		
+		return allIdentifiers;
+	}
+	
+	/**
+	 * Converts a PatientIdentifier to a Map representation
+	 * 
+	 * @param identifier the identifier to convert
+	 * @return map representation of the identifier
+	 */
+	private Map<String, Object> convertIdentifierToMap(PatientIdentifier identifier) {
+		Map<String, Object> identifierData = new HashMap<>();
+		identifierData.put("identifier", identifier.getIdentifier());
+		identifierData.put("identifierType", identifier.getIdentifierType().getName());
+		identifierData.put("identifierTypeUuid", identifier.getIdentifierType().getUuid());
+		identifierData.put("preferred", identifier.getPreferred());
+		identifierData.put("location", identifier.getLocation() != null ? identifier.getLocation().getName() : null);
+		return identifierData;
+	}
+	
+	/**
+	 * Converts all patient attributes to a list of maps
+	 * 
+	 * @param patient the patient whose attributes to convert
+	 * @return list of attribute maps
+	 */
+	private List<Map<String, Object>> convertAttributesToList(Patient patient) {
+		List<Map<String, Object>> attributes = new ArrayList<>();
+		
+		// Add all active attributes
+		for (PersonAttribute attribute : patient.getActiveAttributes()) {
+			attributes.add(convertAttributeToMap(attribute));
+		}
+		
+		return attributes;
+	}
+	
+	/**
+	 * Converts a PersonAttribute to a Map representation
+	 * 
+	 * @param attribute the attribute to convert
+	 * @return map representation of the attribute
+	 */
+	private Map<String, Object> convertAttributeToMap(PersonAttribute attribute) {
+		Map<String, Object> attributeData = new HashMap<>();
+		attributeData.put("attributeType", attribute.getAttributeType().getName());
+		attributeData.put("attributeTypeUuid", attribute.getAttributeType().getUuid());
+		attributeData.put("value", attribute.getValue());
+		return attributeData;
+	}
+	
 	private String convertToJson(Map<String, Object> data) {
 		try {
 			return objectMapper.writeValueAsString(data);
@@ -185,93 +244,78 @@ public class PatientIdStickerDataSetEvaluator implements DataSetEvaluator {
 		}
 	}
 	
+	/**
+	 * Calculates a human-readable age or time duration between a birth date and now. The output format
+	 * changes based on the duration: - Less than 1 minute: "just now" - 1-119 minutes: "X minute(s)" -
+	 * 2-47 hours: "X hour(s)" - 2-27 days: "X day(s)" - 4-51 weeks: "X week(s) [Y day(s)]" - 1 year: "X
+	 * month(s) [Y day(s)]" - 2-17 years: "X year(s) [Y month(s)]" - 18+ years: "X years"
+	 * 
+	 * @param birthDate The starting date to calculate age from (null returns null)
+	 * @return Formatted age string with appropriate unit(s), or null if birthDate is null
+	 */
 	private String calculateAge(Date birthDate) {
 		if (birthDate == null) {
 			return null;
 		}
 		
-		Calendar from = Calendar.getInstance();
-		from.setTime(birthDate);
-		Calendar to = Calendar.getInstance();
+		DateTime from = new DateTime(birthDate);
+		DateTime to = new DateTime();
 		
-		long diffInMillis = to.getTimeInMillis() - from.getTimeInMillis();
-		long hourDiff = diffInMillis / (60 * 60 * 1000);
-		long dayDiff = hourDiff / 24;
-		long weekDiff = dayDiff / 7;
-		
-		// Calculate months and years considering calendar dates
-		int yearDiff = to.get(Calendar.YEAR) - from.get(Calendar.YEAR);
-		int monthDiff = to.get(Calendar.MONTH) - from.get(Calendar.MONTH);
-		if (monthDiff < 0) {
-			yearDiff--;
-			monthDiff += 12;
+		Minutes minutes = Minutes.minutesBetween(from, to);
+		if (minutes.isLessThan(Minutes.ONE)) {
+			return getMessage("patientdocuments.justnow");
+		}
+		if (minutes.isLessThan(Minutes.minutes(120))) {
+			return formatUnit(minutes.getMinutes(), "minute", "minutes");
 		}
 		
-		MessageSourceService i18nTranslator = Context.getMessageSourceService();
-		String justNow = i18nTranslator.getMessage("patientdocuments.justnow");
-		
-		if (hourDiff < 2) {
-			long minuteDiff = diffInMillis / (60 * 1000);
-			if (minuteDiff == 0) {
-				return justNow;
-			}
-			return formatUnit(minuteDiff, "minute", "minutes");
-		} else if (dayDiff < 2) {
-			return formatUnit(hourDiff, "hour", "hours");
-		} else if (weekDiff < 4) {
-			return formatUnit(dayDiff, "day", "days");
-		} else if (yearDiff < 1) {
-			long remainderDayDiff = dayDiff - (weekDiff * 7);
-			if (remainderDayDiff == 0) {
-				return formatUnit(weekDiff, "week", "weeks");
-			}
-			return formatUnit(weekDiff, "week", "weeks") + " " + formatUnit(remainderDayDiff, "day", "days");
-		} else if (yearDiff < 2) {
-			Calendar temp = (Calendar) from.clone();
-			temp.add(Calendar.MONTH, monthDiff);
-			long remainderDayDiff = daysBetween(temp, to);
-			
-			if (remainderDayDiff == 0) {
-				return formatUnit(monthDiff, "month", "months");
-			}
-			return formatUnit(monthDiff, "month", "months") + " " + formatUnit(remainderDayDiff, "day", "days");
-		} else if (yearDiff < 18) {
-			Calendar temp = (Calendar) from.clone();
-			temp.add(Calendar.YEAR, yearDiff);
-			int remainderMonthDiff = monthsBetween(temp, to);
-			
-			if (remainderMonthDiff == 0) {
-				return formatUnit(yearDiff, "year", "years");
-			}
-			return formatUnit(yearDiff, "year", "years") + " " + formatUnit(remainderMonthDiff, "month", "months");
-		} else {
-			return formatUnit(yearDiff, "year", "years");
+		Hours hours = Hours.hoursBetween(from, to);
+		if (hours.isLessThan(Hours.hours(48))) {
+			return formatUnit(hours.getHours(), "hour", "hours");
 		}
+		
+		Days days = Days.daysBetween(from, to);
+		if (days.isLessThan(Days.days(28))) {
+			return formatUnit(days.getDays(), "day", "days");
+		}
+		
+		Weeks weeks = Weeks.weeksBetween(from, to);
+		if (weeks.isLessThan(Weeks.weeks(52))) {
+			int remainingDays = days.getDays() - (weeks.getWeeks() * 7);
+			return remainingDays == 0 ? formatUnit(weeks.getWeeks(), "week", "weeks")
+			        : formatUnit(weeks.getWeeks(), "week", "weeks") + " " + formatUnit(remainingDays, "day", "days");
+		}
+		
+		Months months = Months.monthsBetween(from, to);
+		if (months.isLessThan(Months.months(24))) {
+			int remainingDays = Days.daysBetween(from.plusMonths(months.getMonths()), to).getDays();
+			return remainingDays == 0 ? formatUnit(months.getMonths(), "month", "months")
+			        : formatUnit(months.getMonths(), "month", "months") + " " + formatUnit(remainingDays, "day", "days");
+		}
+		
+		Years years = Years.yearsBetween(from, to);
+		if (years.isLessThan(Years.years(18))) {
+			int remainingMonths = Months.monthsBetween(from.plusYears(years.getYears()), to).getMonths();
+			return remainingMonths == 0 ? formatUnit(years.getYears(), "year", "years")
+			        : formatUnit(years.getYears(), "year", "years") + " " + formatUnit(remainingMonths, "month", "months");
+		}
+		
+		return formatUnit(years.getYears(), "year", "years");
 	}
 	
+	/**
+	 * Gets a translated message using the application's message source.
+	 */
+	private String getMessage(String code) {
+		return Context.getMessageSourceService().getMessage(code);
+	}
+	
+	/**
+	 * Formats a time value with proper singular/plural unit.
+	 */
 	private String formatUnit(long value, String singularKey, String pluralKey) {
-		MessageSourceService i18nTranslator = Context.getMessageSourceService();
-		String singular = i18nTranslator.getMessage("patientdocuments." + singularKey);
-		String plural = i18nTranslator.getMessage("patientdocuments." + pluralKey);
+		String singular = getMessage("patientdocuments." + singularKey);
+		String plural = getMessage("patientdocuments." + pluralKey);
 		return value + " " + (value == 1 ? singular : plural);
-	}
-	
-	private long daysBetween(Calendar startDate, Calendar endDate) {
-		long diffInMillis = endDate.getTimeInMillis() - startDate.getTimeInMillis();
-		return diffInMillis / (24 * 60 * 60 * 1000);
-	}
-	
-	private int monthsBetween(Calendar startDate, Calendar endDate) {
-		int months = 0;
-		Calendar temp = (Calendar) startDate.clone();
-		
-		while (temp.before(endDate)) {
-			temp.add(Calendar.MONTH, 1);
-			if (temp.before(endDate) || temp.equals(endDate)) {
-				months++;
-			}
-		}
-		
-		return months;
 	}
 }

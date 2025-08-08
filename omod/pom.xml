@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
@@ -13,7 +14,8 @@
 	<description>OMOD submodule for Patient Documents</description>
 
 	<properties>
-        <icu4j.version>74.2</icu4j.version>
+        <xmlgraphicsVersion>2.9</xmlgraphicsVersion>
+		<openmrsWebRestVersion>2.49.0</openmrsWebRestVersion>
     </properties>
 
 	<dependencies>
@@ -25,42 +27,28 @@
 		<dependency>
 			<groupId>org.openmrs.web</groupId>
 			<artifactId>openmrs-web</artifactId>
-			<scope>provided</scope>
-			<type>jar</type>
-		</dependency>
-		<dependency>
-			<groupId>org.openmrs.web</groupId>
-			<artifactId>openmrs-web</artifactId>
+			<version>${openmrsPlatformVersion}</version>
 			<scope>test</scope>
 			<type>test-jar</type>
-			<version>${openmrsPlatformVersion}</version>
 		</dependency>
 		<dependency>
-		    <groupId>com.github.librepdf</groupId>
-		    <artifactId>openpdf</artifactId>
-		    <version>${openpdfVersion}</version>
-		    <scope>test</scope>
+			<groupId>org.openmrs.module</groupId>
+			<artifactId>webservices.rest-omod</artifactId>
+			<scope>provided</scope>
+			<type>jar</type>
+			<version>${openmrsWebRestVersion}</version>
 		</dependency>
-		
-
-        <!-- ICU4J Core Library -->
-        <dependency>
-            <groupId>com.ibm.icu</groupId>
-            <artifactId>icu4j</artifactId>
-            <version>${icu4j.version}</version>
-        </dependency>
-        
-        <!-- ICU4J Bidirectional Text Support -->
-        <dependency>
-            <groupId>com.ibm.icu</groupId>
-            <artifactId>icu4j-charset</artifactId>
-            <version>${icu4j.version}</version>
-        </dependency>
+		<dependency>
+			<groupId>com.github.librepdf</groupId>
+			<artifactId>openpdf</artifactId>
+			<version>${openpdfVersion}</version>
+			<scope>test</scope>
+		</dependency>
 
 		<dependency>
 			<groupId>org.apache.xmlgraphics</groupId>
 			<artifactId>fop</artifactId>
-			<version>2.9</version>
+			<version>${xmlgraphicsVersion}</version>
 			<type>jar</type>
 			<exclusions>
 				<exclusion>

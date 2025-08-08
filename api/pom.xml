@@ -14,14 +14,18 @@
 	<description>API project for Patient Documents</description>
 
 	<properties>
-        <icu4j.version>74.2</icu4j.version>
-    </properties>
+		<fopVersion>2.9</fopVersion>
+		<pdfboxVersion>2.0.28</pdfboxVersion>
+		<avalonFrameworkVersion>4.3.1</avalonFrameworkVersion>
+		<barcode4jVersion>2.1</barcode4jVersion>
+	</properties>
 
 	<dependencies>
 		<!-- Begin OpenMRS core -->
 		<dependency>
 			<groupId>org.openmrs.api</groupId>
 			<artifactId>openmrs-api</artifactId>
+			<version>${openmrsPlatformVersion}</version>
 			<scope>provided</scope>
 			<type>jar</type>
 			<exclusions>
@@ -47,6 +51,7 @@
 		<dependency>
 			<groupId>org.openmrs.test</groupId>
 			<artifactId>openmrs-test</artifactId>
+			<version>${openmrsPlatformVersion}</version>
 			<type>pom</type>
 			<scope>test</scope>
 			<exclusions>
@@ -56,34 +61,8 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-		<dependency>
-			<groupId>org.openmrs.web</groupId>
-			<artifactId>openmrs-web</artifactId>
-			<scope>provided</scope>
-			<type>jar</type>
-		</dependency>
 
 		<!-- End OpenMRS core -->
-
-		<dependency>
-			<groupId>org.openmrs.module</groupId>
-			<artifactId>emrapi-api</artifactId>
-			<version>${emrapiVersion}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.openmrs.module</groupId>
-			<artifactId>emrapi-api-1.12</artifactId>
-			<version>${emrapiVersion}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.openmrs.module</groupId>
-			<artifactId>emrapi-condition-list</artifactId>
-			<version>${emrapiVersion}</version>
-			<scope>test</scope>
-		</dependency>
-
 		<dependency>
 			<groupId>org.openmrs.module</groupId>
 			<artifactId>calculation-api</artifactId>
@@ -114,7 +93,7 @@
 		<dependency>
 			<groupId>org.apache.xmlgraphics</groupId>
 			<artifactId>fop</artifactId>
-			<version>2.9</version>
+			<version>${fopVersion}</version>
 			<type>jar</type>
 			<exclusions>
 				<exclusion>
@@ -139,22 +118,8 @@
 		<dependency>
 			<groupId>org.apache.pdfbox</groupId>
 			<artifactId>pdfbox</artifactId>
-			<version>2.0.28</version>
+			<version>${pdfboxVersion}</version>
 			<type>jar</type>
-		</dependency>
-
-		<dependency>
-			<groupId>org.openmrs.module</groupId>
-			<artifactId>providermanagement-api</artifactId>
-			<version>${providermanagementVersion}</version>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.openmrs.contrib</groupId>
-			<artifactId>testutils</artifactId>
-			<version>${openmrsTestutilsVersion}</version>
-			<scope>test</scope>
 		</dependency>
 
 		<dependency>
@@ -163,61 +128,23 @@
 			<version>${reportingcompatibilityVersion}</version>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>org.openmrs.module</groupId>
-			<artifactId>idgen-api</artifactId>
-			<version>${idgenVersion}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>mysql</artifactId>
-            <version>${mysqlTestContainerVersion}</version>
-            <scope>test</scope>
-        </dependency>
-		<dependency>
-		    <groupId>commons-io</groupId>
-		    <artifactId>commons-io</artifactId>
-		    <version>2.18.0</version>
-		</dependency>
-	
-		<dependency>
-			<groupId>org.bahmni.module</groupId>
-			<artifactId>appointments-api</artifactId>
-			<version>${appointmentsVersion}</version>
-			<scope>test</scope>
-		</dependency>
-
-        <!-- ICU4J Core Library -->
-        <dependency>
-            <groupId>com.ibm.icu</groupId>
-            <artifactId>icu4j</artifactId>
-            <version>${icu4j.version}</version>
-        </dependency>
-        
-        <!-- ICU4J Bidirectional Text Support -->
-        <dependency>
-            <groupId>com.ibm.icu</groupId>
-            <artifactId>icu4j-charset</artifactId>
-            <version>${icu4j.version}</version>
-        </dependency>
 
 		<dependency>
 			<groupId>org.apache.avalon.framework</groupId>
 			<artifactId>avalon-framework-impl</artifactId>
-			<version>4.3.1</version>
+			<version>${avalonFrameworkVersion}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.apache.avalon.framework</groupId>
 			<artifactId>avalon-framework-api</artifactId>
-			<version>4.3.1</version>
+			<version>${avalonFrameworkVersion}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>net.sf.barcode4j</groupId>
 			<artifactId>barcode4j</artifactId>
-			<version>2.1</version>
+			<version>${barcode4jVersion}</version>
 			<exclusions>
 				<exclusion>
 					<groupId>org.apache.avalon.framework</groupId>
@@ -229,7 +156,7 @@
 		<dependency>
 			<groupId>net.sf.barcode4j</groupId>
 			<artifactId>barcode4j-fop-ext</artifactId>
-			<version>2.1</version>
+			<version>${barcode4jVersion}</version>
 			<exclusions>
 				<exclusion>
 					<groupId>org.apache.xmlgraphics</groupId>

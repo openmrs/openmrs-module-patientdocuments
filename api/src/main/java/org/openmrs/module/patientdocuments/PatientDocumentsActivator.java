@@ -29,14 +29,18 @@ public class PatientDocumentsActivator extends BaseModuleActivator {
 	 */
 	@Override
 	public void started() {
-		log.info("Started " + MODULE_NAME);
+		log.info("Started module: {}", MODULE_NAME);
 		PatientIdStickerReportManager reportManager = new PatientIdStickerReportManager();
-		log.info("Setting up report " + reportManager.getName() + "...");
+		String patientIdStickerReportName = reportManager.getName();
+		
+		log.info("Setting up report: {} ...", patientIdStickerReportName);
+		
 		try {
 			ReportManagerUtil.setupReport(reportManager);
+			log.info("Successfully set up report: {}", patientIdStickerReportName);
 		}
 		catch (Exception e) {
-			log.error("Failed to setup '" + reportManager.getName() + "' report because of: " + e.getMessage());
+			log.error("Failed to set up report '{}'", patientIdStickerReportName, e);
 		}
 	}
 	
@@ -44,7 +48,7 @@ public class PatientDocumentsActivator extends BaseModuleActivator {
 	 * @see #shutdown()
 	 */
 	public void shutdown() {
-		log.info("Shutdown " + MODULE_NAME);
+		log.info("Shutdown module: {}", MODULE_NAME);
 	}
 	
 }

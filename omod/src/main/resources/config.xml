@@ -21,14 +21,16 @@
 		<require_module version="${initializerVersion}">
 			org.openmrs.module.initializer
 		</require_module>
-		<require_module version="${patientsummaryVersion}">
-			org.openmrs.module.patientsummary
-		</require_module>
 	</require_modules>
 
 	<messages>
 		<lang>en</lang>
 		<file>messages.properties</file>
+	</messages>
+	
+	<messages>
+		<lang>ar</lang>
+		<file>messages_ar.properties</file>
 	</messages>
 
 	<!-- Required Privileges -->

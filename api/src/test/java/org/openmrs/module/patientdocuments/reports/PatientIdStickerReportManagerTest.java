@@ -22,7 +22,7 @@ import org.openmrs.module.reporting.report.ReportDesign;
 import org.openmrs.module.reporting.report.definition.ReportDefinition;
 import org.openmrs.module.reporting.report.definition.service.ReportDefinitionService;
 import org.openmrs.module.reporting.report.service.ReportService;
-import org.openmrs.test.BaseModuleContextSensitiveTest;
+import org.openmrs.test.jupiter.BaseModuleContextSensitiveTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.openmrs.module.reporting.report.manager.ReportManagerUtil;
 
@@ -36,9 +36,7 @@ public class PatientIdStickerReportManagerTest extends BaseModuleContextSensitiv
 	
 	@Before
 	public void setUp() throws Exception {
-		// executeDataSet("org/openmrs/module/reporting/include/ReportTestDataset-openmrs-2.0.xml");
 		executeDataSet("org/openmrs/module/patientdocuments/include/patientIdStickerManagerTestDataset.xml");
-		// NOTE: Datasets commented out due to missing files. Add them if available for full test coverage.
 		ReportManagerUtil.setupReport(new PatientIdStickerReportManager());
 	}
 	

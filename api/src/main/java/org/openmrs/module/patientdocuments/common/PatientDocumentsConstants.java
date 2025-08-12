@@ -27,12 +27,6 @@ public class PatientDocumentsConstants {
 	
 	public static final String COMPONENT_REPORTMANAGER_PATIENT_ID_STICKER = MODULE_ARTIFACT_ID + "." + PATIENT_ID_STICKER_ID;
 	
-	/*
-	 * URIs URLs
-	 */
-	
-	public static final String ROOT_URL = "/module/" + MODULE_ARTIFACT_ID;
-	
 	/**
 	 * The path to the style sheet for Patient History reports.
 	 */

@@ -7,16 +7,17 @@
  * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
  * graphic logo is a trademark of OpenMRS Inc.
  */
-package org.openmrs.module.patientdocuments.web;
+package org.openmrs.module.patientdocuments.web.rest.controller;
 
 import static org.openmrs.module.patientdocuments.common.PatientDocumentsConstants.PATIENT_ID_STICKER_ID;
-import static org.openmrs.module.patientdocuments.common.PatientDocumentsConstants.ROOT_URL;
+import static org.openmrs.module.patientdocuments.common.PatientDocumentsConstants.MODULE_ARTIFACT_ID;
 
 import javax.servlet.http.HttpServletResponse;
 
 import org.openmrs.Patient;
 import org.openmrs.api.PatientService;
 import org.openmrs.module.patientdocuments.reports.PatientIdStickerPdfReport;
+import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,9 +29,11 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
+@RequestMapping(value = "/rest/" + RestConstants.VERSION_1 + "/" + MODULE_ARTIFACT_ID + "/" + PATIENT_ID_STICKER_ID)
 public class PatientIdStickerDataPdfExportController extends BaseRestController {
 	
 	private static final Logger logger = LoggerFactory.getLogger(PatientIdStickerDataPdfExportController.class);
@@ -65,7 +68,7 @@ public class PatientIdStickerDataPdfExportController extends BaseRestController 
 		}
 	}
 	
-	@RequestMapping(value = ROOT_URL + "/" + PATIENT_ID_STICKER_ID)
+	@RequestMapping(method = RequestMethod.GET)
 	public ResponseEntity<byte[]> getPatientIdSticker(HttpServletResponse response,
 	        @RequestParam(value = "patientUuid") String patientUuid,
 	        @RequestParam(value = "inline", required = false, defaultValue = "true") boolean inline) {

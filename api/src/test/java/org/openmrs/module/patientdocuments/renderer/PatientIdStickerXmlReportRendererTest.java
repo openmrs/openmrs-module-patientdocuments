@@ -25,7 +25,7 @@ public class PatientIdStickerXmlReportRendererTest extends BaseModuleContextSens
 	
 	@Before
 	public void setup() throws Exception {
-		executeDataSet("org/openmrs/module/patientdocuments/include/patientIdStickerManagerTestDataset.xml");
+		executeDataSet("patientIdStickerManagerTestDataset.xml");
 		ReportManagerUtil.setupReport(new PatientIdStickerReportManager());
 	}
 	

@@ -49,7 +49,7 @@
 		<!-- override old openmrs-sdk maven parent pom properties -->
 		<javaCompilerSource>8</javaCompilerSource>
 		<javaCompilerTarget>8</javaCompilerTarget>
-		<openmrsPlatformVersion>2.7.0</openmrsPlatformVersion>
+		<openmrsPlatformVersion>2.7.3</openmrsPlatformVersion>
 		<reportingVersion>1.21.0</reportingVersion>
 		<reportingcompatibilityVersion>2.0.4</reportingcompatibilityVersion>
 		<calculationVersion>1.1</calculationVersion>

@@ -1,4 +1,4 @@
-package org.openmrs.module.patientdocuments.web;
+package org.openmrs.module.patientdocuments.web.rest.controller;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

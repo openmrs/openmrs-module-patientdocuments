@@ -3,14 +3,14 @@
 <module configVersion="1.2">
 
 	<!-- Base Module Properties -->
-	<id>@MODULE_ID@</id>
-	<name>@MODULE_NAME@</name>
-	<version>@MODULE_VERSION@.${revisionNumber}</version>
-	<package>@MODULE_PACKAGE@</package>
+	<id>${project.parent.artifactId}</id>
+	<name>${project.parent.name}</name>
+	<version>${project.parent.version}</version>
+	<package>${project.parent.groupId}.${project.parent.artifactId}</package>
 	<author>${project.parent.organization.name}</author>
 	<description>${project.parent.description}</description>
 
-	<activator>@MODULE_PACKAGE@.PatientDocumentsActivator</activator>
+	<activator>${project.parent.groupId}.${project.parent.artifactId}.PatientDocumentsActivator</activator>
 
 	<require_version>${openmrsPlatformVersion}</require_version>
 

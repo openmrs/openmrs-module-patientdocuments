@@ -12,7 +12,7 @@
 
 	<activator>${project.parent.groupId}.${project.parent.artifactId}.PatientDocumentsActivator</activator>
 
-	<require_version>${openmrsPlatformVersion}</require_version>
+	<require_version>${openMRSVersion}</require_version>
 
 	<require_modules>
 		<require_module version="${reportingVersion}">

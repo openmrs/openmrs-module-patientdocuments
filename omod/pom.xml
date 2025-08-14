@@ -25,13 +25,6 @@
 			<version>${project.parent.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>org.openmrs.web</groupId>
-			<artifactId>openmrs-web</artifactId>
-			<version>${openmrsPlatformVersion}</version>
-			<scope>test</scope>
-			<type>test-jar</type>
-		</dependency>
-		<dependency>
 			<groupId>org.openmrs.module</groupId>
 			<artifactId>webservices.rest-omod</artifactId>
 			<scope>provided</scope>
@@ -86,37 +79,9 @@
 		
 		<dependency>
 			<groupId>org.openmrs.module</groupId>
-			<artifactId>serialization.xstream-api</artifactId>
-			<version>${serialization.xstreamVersion}</version>
-			<scope>test</scope>
-		</dependency>
-		
-		<dependency>
-			<groupId>org.openmrs.module</groupId>
-			<artifactId>initializer-api</artifactId>
-			<version>${initializerVersion}</version>
-			<scope>test</scope>
-		</dependency>
-		
-		<dependency>
-			<groupId>org.openmrs.module</groupId>
 			<artifactId>reportingcompatibility-api</artifactId>
 			<version>${reportingcompatibilityVersion}</version>
 			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.openmrs.module</groupId>
-			<artifactId>serialization.xstream-api-2.0</artifactId>
-			<version>${serialization.xstreamVersion}</version>
-			<scope>test</scope>
-		</dependency>
-		
-		<dependency>
-			<groupId>org.openmrs.module</groupId>
-			<artifactId>calculation-api</artifactId>
-			<version>${calculationVersion}</version>
-			<scope>provided</scope>
 		</dependency>
 		
 	</dependencies>
@@ -144,56 +109,27 @@
 			<plugin>
 				<groupId>org.openmrs.maven.plugins</groupId>
 				<artifactId>maven-openmrs-plugin</artifactId>
-				<version>1.0.1</version>
-				<extensions>true</extensions>
-				<executions>
-					<execution>
-						<id>init</id>
-						<phase>initialize</phase>
-						<goals>
-							<goal>initialize-module</goal>
-						</goals>
-					</execution>
-					<execution>
-						<id>pack</id>
-						<phase>package</phase>
-						<goals>
-							<goal>package-module</goal>
-						</goals>
-					</execution>
-				</executions>
 			</plugin>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
-				<version>3.2.0</version>
 				<executions>
 					<execution>
-						<id>Expand moduleApplicationContext and messages</id>
+						<id>Expand resources</id>
 						<goals>
 							<goal>unpack-dependencies</goal>
 						</goals>
-						<phase>generate-resources</phase>
+						<phase>prepare-package</phase>
 						<configuration>
 							<includeGroupIds>${project.parent.groupId}</includeGroupIds>
 							<includeArtifactIds>${project.parent.artifactId}-api</includeArtifactIds>
-							<excludeTransitive>true</excludeTransitive>
-							<includes>**/*</includes>
+							<includeScope>compile</includeScope>
+							<includes>**\/*.xml,**\/*.properties</includes>
 							<outputDirectory>${project.build.directory}/classes</outputDirectory>
 						</configuration>
 					</execution>
 				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<configuration>
-					<argLine>-Xmx512m -Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
-					<includes>
-						<include>**/*Test.java</include>
-						<include>**/*_IT.java</include>
-					</includes>
-				</configuration>
 			</plugin>
 		</plugins>
 	</build>

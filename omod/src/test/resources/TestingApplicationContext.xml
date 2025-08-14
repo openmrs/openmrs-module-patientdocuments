@@ -1,13 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-          http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+          http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+          http://www.springframework.org/schema/context
+          http://www.springframework.org/schema/context/spring-context-3.0.xsd">
 
-    <!--
-    From applicationContext-service.xml in openmrs-api
-    Needed to override and add hibernate mappings to the classpath since omod is not packaged yet
-    -->
+    <!-- Enable component scanning for the module -->
+    <context:component-scan base-package="org.openmrs.module.patientdocuments"/>
+    
+    <!-- Minimal test configuration -->
     <bean id="sessionFactory" class="org.openmrs.api.db.hibernate.HibernateSessionFactoryBean">
         <property name="configLocations">
             <list>
@@ -18,13 +21,12 @@
         <property name="mappingJarLocations">
             <ref bean="mappingJarResources"/>
         </property>
-        <!--  default properties must be set in the hibernate.default.properties -->
+        <property name="packagesToScan">
+            <list>
+                <value>org.openmrs</value>
+            </list>
+        </property>
     </bean>
-
-    <!--
-    Make sure test-hibernate.cfg.xml is available in the classpath for tests.
-    If not, copy it from api/src/test/resources to omod/src/test/resources.
-    -->
 
     <!-- Import API module's Spring context for bean/component scanning -->
     <import resource="classpath:moduleApplicationContext.xml"/>

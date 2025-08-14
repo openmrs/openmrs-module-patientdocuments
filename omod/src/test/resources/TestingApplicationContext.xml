@@ -27,8 +27,4 @@
             </list>
         </property>
     </bean>
-
-    <!-- Import API module's Spring context for bean/component scanning -->
-    <import resource="classpath:moduleApplicationContext.xml"/>
-
 </beans>

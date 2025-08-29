@@ -11,11 +11,9 @@ package org.openmrs.module.patientdocuments.renderer;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.openmrs.Patient;
 import org.openmrs.module.patientdocuments.reports.PatientIdStickerPdfReport;
-import org.openmrs.test.SkipBaseSetup;
 import org.openmrs.test.jupiter.BaseModuleContextSensitiveTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.openmrs.module.reporting.report.manager.ReportManagerUtil;

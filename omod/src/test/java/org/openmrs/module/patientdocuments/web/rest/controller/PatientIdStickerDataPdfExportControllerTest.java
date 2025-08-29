@@ -10,14 +10,12 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.initializer.api.InitializerService;
 import org.openmrs.module.patientdocuments.common.PatientDocumentsConstants;
 import org.openmrs.module.patientdocuments.reports.PatientIdStickerReportManager;
 import org.openmrs.module.reporting.report.manager.ReportManagerUtil;
-import org.openmrs.test.SkipBaseSetup;
 import org.openmrs.test.jupiter.BaseModuleContextSensitiveTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -27,8 +25,6 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import com.lowagie.text.pdf.PdfReader;
 import com.lowagie.text.pdf.parser.PdfTextExtractor;
 
-// @SkipBaseSetup
-// @Disabled
 public class PatientIdStickerDataPdfExportControllerTest extends BaseModuleContextSensitiveTest {
 	
 	@Autowired

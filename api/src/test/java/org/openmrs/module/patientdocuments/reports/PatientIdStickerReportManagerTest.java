@@ -16,29 +16,17 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import java.util.List;
 
 import org.hamcrest.Matchers;
-import org.hamcrest.collection.IsCollectionWithSize;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.openmrs.module.patientdocuments.renderer.PatientIdStickerXmlReportRenderer;
 import org.openmrs.module.reporting.report.ReportDesign;
 import org.openmrs.module.reporting.report.definition.ReportDefinition;
 import org.openmrs.module.reporting.report.definition.service.ReportDefinitionService;
 import org.openmrs.module.reporting.report.service.ReportService;
-import org.openmrs.test.SkipBaseSetup;
 import org.openmrs.test.jupiter.BaseModuleContextSensitiveTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.openmrs.module.reporting.report.manager.ReportManagerUtil;
 
-// @SkipBaseSetup
-// @Disabled
 public class PatientIdStickerReportManagerTest extends BaseModuleContextSensitiveTest {
-	
-	@Autowired
-	private ReportService reportService;
-	
-	@Autowired
-	private ReportDefinitionService reportDefinitionService;
 	
 	@BeforeEach
 	public void setUp() throws Exception {

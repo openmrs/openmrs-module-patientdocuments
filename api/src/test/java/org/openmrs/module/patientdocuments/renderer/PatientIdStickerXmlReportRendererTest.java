@@ -21,8 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.openmrs.module.reporting.report.manager.ReportManagerUtil;
 import org.openmrs.module.patientdocuments.reports.PatientIdStickerReportManager;
 
-@SkipBaseSetup
-@Disabled
 public class PatientIdStickerXmlReportRendererTest extends BaseModuleContextSensitiveTest {
 	
 	@Autowired

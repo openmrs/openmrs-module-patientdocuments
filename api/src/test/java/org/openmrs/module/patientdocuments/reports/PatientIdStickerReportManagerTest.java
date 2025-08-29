@@ -30,8 +30,8 @@ import org.openmrs.test.jupiter.BaseModuleContextSensitiveTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.openmrs.module.reporting.report.manager.ReportManagerUtil;
 
-@SkipBaseSetup
-@Disabled
+// @SkipBaseSetup
+// @Disabled
 public class PatientIdStickerReportManagerTest extends BaseModuleContextSensitiveTest {
 	
 	@Autowired
@@ -48,22 +48,17 @@ public class PatientIdStickerReportManagerTest extends BaseModuleContextSensitiv
 	}
 	
 	private ReportDesign setupAndReturnReportDesign() {
-		List<ReportDefinition> reportDefinitions = this.reportDefinitionService
-		        .getDefinitions(PatientIdStickerReportManager.REPORT_DEFINITION_NAME, true);
-		
-		assertNotNull(reportDefinitions);
-		assertThat(reportDefinitions, IsCollectionWithSize.hasSize(1));
-		ReportDefinition reportDefinition = reportDefinitions.get(0);
+		PatientIdStickerReportManager manager = new PatientIdStickerReportManager();
+		ReportDefinition reportDefinition = manager.constructReportDefinition();
 		assertNotNull(reportDefinition);
 		assertEquals(PatientIdStickerReportManager.REPORT_DEFINITION_NAME, reportDefinition.getName());
 		assertNotNull(reportDefinition.getDataSetDefinitions());
 		assertThat(reportDefinition.getDataSetDefinitions().keySet(),
 		    Matchers.contains(PatientIdStickerReportManager.DATASET_KEY_STICKER_FIELDS));
 		
-		List<ReportDesign> reportDesigns = this.reportService.getReportDesigns(reportDefinition,
-		    PatientIdStickerXmlReportRenderer.class, false);
+		List<ReportDesign> reportDesigns = manager.constructReportDesigns(reportDefinition);
 		assertNotNull(reportDesigns);
-		assertThat(reportDesigns, IsCollectionWithSize.hasSize(1));
+		assertThat(reportDesigns.size(), org.hamcrest.Matchers.is(1));
 		
 		return reportDesigns.get(0);
 	}

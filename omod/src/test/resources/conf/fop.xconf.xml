@@ -6,13 +6,24 @@
   <!-- Strict FO validation -->
   <strict-validation>true</strict-validation>
 
-  <!-- Base URL for resolving relative URLs -->
-  <base>.</base>
+  <!-- Base URL is provided programmatically via FopFactoryBuilder; omit here -->
 
   <!-- Font Base URL for resolving relative font URLs -->
   <renderers>
     <renderer mime="application/pdf">
       <!-- Font configuration -->
+      <fonts>
+        <!-- fontBaseUri is set in code to the classpath 'fonts' directory -->
+        <font embed-url="IBMPlexSansArabic-Regular.ttf">
+          <font-triplet name="IBM Plex Sans Arabic" style="normal" weight="normal"/>
+          <font-triplet name="IBM Plex Sans Arabic" style="normal" weight="400"/>
+        </font>
+        <font embed-url="IBMPlexSansArabic-Bold.ttf">
+          <font-triplet name="IBM Plex Sans Arabic Bold" style="normal" weight="bold"/>
+          <font-triplet name="IBM Plex Sans Arabic" style="normal" weight="bold"/>
+          <font-triplet name="IBM Plex Sans Arabic" style="normal" weight="700"/>
+        </font>
+      </fonts>
     </renderer>
   </renderers>
 </fop>

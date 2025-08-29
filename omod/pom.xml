@@ -15,7 +15,6 @@
 
 	<properties>
         <xmlgraphicsVersion>2.9</xmlgraphicsVersion>
-		<openmrsWebRestVersion>2.49.0</openmrsWebRestVersion>
     </properties>
 
 	<dependencies>
@@ -25,19 +24,24 @@
 			<version>${project.parent.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>org.openmrs.module</groupId>
-			<artifactId>webservices.rest-omod</artifactId>
-			<scope>provided</scope>
-			<type>jar</type>
-			<version>${openmrsWebRestVersion}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.openmrs.module</groupId>
-			<artifactId>webservices.rest-omod-common</artifactId>
-			<version>${openmrsWebRestVersion}</version>
- 			<classifier>tests</classifier>
-			<scope>test</scope>
-		</dependency>
+            <groupId>org.openmrs.module</groupId>
+            <artifactId>webservices.rest-omod</artifactId>
+            <version>${openmrsWebRestVersion}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.openmrs.module</groupId>
+            <artifactId>webservices.rest-omod-common</artifactId>
+            <version>${openmrsWebRestVersion}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.openmrs.module</groupId>
+            <artifactId>webservices.rest-omod-common</artifactId>
+            <version>${openmrsWebRestVersion}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
 		<dependency>
 			<groupId>com.github.librepdf</groupId>
 			<artifactId>openpdf</artifactId>

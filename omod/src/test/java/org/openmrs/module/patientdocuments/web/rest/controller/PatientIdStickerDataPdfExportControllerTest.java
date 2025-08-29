@@ -27,8 +27,8 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import com.lowagie.text.pdf.PdfReader;
 import com.lowagie.text.pdf.parser.PdfTextExtractor;
 
-@SkipBaseSetup
-@Disabled
+// @SkipBaseSetup
+// @Disabled
 public class PatientIdStickerDataPdfExportControllerTest extends BaseModuleContextSensitiveTest {
 	
 	@Autowired
@@ -85,7 +85,6 @@ public class PatientIdStickerDataPdfExportControllerTest extends BaseModuleConte
 		}
 		
 		String cleanedText = allText.replaceAll("<[^>]+>", " ").replaceAll("\\s+", " ").trim();
-		
 		String[] expectedPhrases = { "Patient Identifier", "100001", "Gender M", "Date of Birth 1965-09-30",
 		        "Age 59 years" };
 		
@@ -116,7 +115,6 @@ public class PatientIdStickerDataPdfExportControllerTest extends BaseModuleConte
 		
 		// TODO: Fix Arabic character rendering - currently displaying as ####
 		String cleanedText = allText.replaceAll("\\s+", " ").trim();
-		
 		String[] expectedPhrases = { "معرف المريض", "الجنس", "تاريخ الميلاد", "العمر", "100001", "M", "1965-09-30",
 		        "59 سنوات" };
 		

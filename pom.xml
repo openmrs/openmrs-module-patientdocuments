@@ -49,13 +49,14 @@
 		<!-- override old openmrs-sdk maven parent pom properties -->
 		<openMRSVersion>2.7.0</openMRSVersion>
 		<openMRSMinorVersion>2.7</openMRSMinorVersion>
-		<reportingVersion>1.21.0</reportingVersion>
+		<reportingVersion>1.28.0</reportingVersion>
 		<reportingcompatibilityVersion>2.0.4</reportingcompatibilityVersion>
 		<calculationVersion>1.2</calculationVersion>
-		<serializationVersion>0.2.14</serializationVersion>
+		<serializationVersion>0.2.16</serializationVersion>
 		<idgenVersion>4.3</idgenVersion>
 		<initializerVersion>2.3.1</initializerVersion>
 		<openpdfVersion>1.3.11</openpdfVersion>
+		<openmrsWebRestVersion>2.5</openmrsWebRestVersion>
 	</properties>
 
 	<dependencies>
@@ -66,12 +67,7 @@
 			<scope>provided</scope>
 		</dependency>
 
-		<dependency>
-			<groupId>org.openmrs.module</groupId>
-			<artifactId>reporting-api-2.0</artifactId>
-			<version>${reportingVersion}</version>
-			<scope>test</scope>
-		</dependency>
+		<!-- reporting-api-2.0 is not available for newer reporting versions and embeds Hibernate 3/4 signatures. -->
 
 		<dependency>
 			<groupId>org.openmrs.module</groupId>
@@ -88,12 +84,24 @@
 					<groupId>org.openmrs.test</groupId>
 					<artifactId>openmrs-test</artifactId>
 				</exclusion>
+				<!-- Prevent older Reporting 1.9 classes from shadowing Hibernate 5 signatures -->
+				<exclusion>
+					<groupId>org.openmrs.module</groupId>
+					<artifactId>reporting-api-1.9</artifactId>
+				</exclusion>
 			</exclusions>
 		</dependency>
 
 		<dependency>
 			<groupId>org.openmrs.module</groupId>
 			<artifactId>initializer-api</artifactId>
+			<version>${initializerVersion}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.openmrs.module</groupId>
+			<artifactId>initializer-api-2.2</artifactId>
 			<version>${initializerVersion}</version>
 			<scope>test</scope>
 		</dependency>

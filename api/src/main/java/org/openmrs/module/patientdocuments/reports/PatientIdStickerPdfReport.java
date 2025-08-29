@@ -153,7 +153,7 @@ public class PatientIdStickerPdfReport {
 			if (fopConfigStream == null) {
 				throw new IOException("FOP configuration file not found: " + FOP_CONFIG_PATH);
 			}
-			URI fontBaseUri = OpenmrsClassLoader.getInstance().getResource("fonts").toURI();
+			URI fontBaseUri = OpenmrsClassLoader.getInstance().getResource("fonts/").toURI();
 			Configuration cfg = new DefaultConfigurationBuilder().build(fopConfigStream);
 			FopFactory fopFactory = new FopFactoryBuilder(fontBaseUri).setConfiguration(cfg).build();
 			FOUserAgent foUserAgent = fopFactory.newFOUserAgent();

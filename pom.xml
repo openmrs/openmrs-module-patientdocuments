@@ -54,7 +54,7 @@
 		<calculationVersion>1.2</calculationVersion>
 		<serializationVersion>0.2.16</serializationVersion>
 		<idgenVersion>4.3</idgenVersion>
-		<initializerVersion>2.3.1</initializerVersion>
+		<initializerVersion>2.9.0</initializerVersion>
 		<openpdfVersion>1.3.11</openpdfVersion>
 		<openmrsWebRestVersion>2.50.0</openmrsWebRestVersion>
 	</properties>

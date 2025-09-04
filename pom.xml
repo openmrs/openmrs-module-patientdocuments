@@ -56,7 +56,7 @@
 		<idgenVersion>4.3</idgenVersion>
 		<initializerVersion>2.3.1</initializerVersion>
 		<openpdfVersion>1.3.11</openpdfVersion>
-		<openmrsWebRestVersion>2.5</openmrsWebRestVersion>
+		<openmrsWebRestVersion>2.50.0</openmrsWebRestVersion>
 	</properties>
 
 	<dependencies>
@@ -128,6 +128,27 @@
 			<version>${openMRSVersion}</version>
 			<type>pom</type>
 			<scope>test</scope>
+			<exclusions>
+				<exclusion>
+					<artifactId>javassist</artifactId>
+					<groupId>javassist</groupId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.powermock</groupId>
+					<artifactId>powermock-api-mockito2</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.powermock</groupId>
+					<artifactId>powermock-api-mockito</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.openmrs.api</groupId>
+			<artifactId>openmrs-api</artifactId>
+			<version>${openMRSVersion}</version>
+			<scope>provided</scope>
+			<type>jar</type>
 			<exclusions>
 				<exclusion>
 					<artifactId>javassist</artifactId>

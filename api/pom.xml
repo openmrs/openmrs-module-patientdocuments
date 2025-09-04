@@ -21,30 +21,6 @@
 	</properties>
 
 	<dependencies>
-		<!-- Begin OpenMRS core -->
-		<dependency>
-			<groupId>org.openmrs.api</groupId>
-			<artifactId>openmrs-api</artifactId>
-			<version>${openMRSVersion}</version>
-			<scope>provided</scope>
-			<type>jar</type>
-			<exclusions>
-				<exclusion>
-					<artifactId>javassist</artifactId>
-					<groupId>javassist</groupId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.powermock</groupId>
-					<artifactId>powermock-api-mockito2</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.powermock</groupId>
-					<artifactId>powermock-api-mockito</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-
-		<!-- End OpenMRS core -->
 		<dependency>
 			<groupId>org.openmrs.module</groupId>
 			<artifactId>calculation-api</artifactId>

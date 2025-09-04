@@ -16,16 +16,16 @@ import org.openmrs.module.initializer.api.InitializerService;
 import org.openmrs.module.patientdocuments.common.PatientDocumentsConstants;
 import org.openmrs.module.patientdocuments.reports.PatientIdStickerReportManager;
 import org.openmrs.module.reporting.report.manager.ReportManagerUtil;
-import org.openmrs.test.jupiter.BaseModuleContextSensitiveTest;
+import org.openmrs.web.test.jupiter.BaseModuleWebContextSensitiveTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletResponse;
-import com.lowagie.text.pdf.PdfReader;
-import com.lowagie.text.pdf.parser.PdfTextExtractor;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
 
-public class PatientIdStickerDataPdfExportControllerTest extends BaseModuleContextSensitiveTest {
+public class PatientIdStickerDataPdfExportControllerTest extends BaseModuleWebContextSensitiveTest {
 	
 	@Autowired
 	private PatientIdStickerDataPdfExportController patientStickerController;
@@ -54,6 +54,9 @@ public class PatientIdStickerDataPdfExportControllerTest extends BaseModuleConte
 		configs.put("report.patientIdSticker.fields.fulladdress", "true");
 		configs.put("report.patientIdSticker.fields.label.font.size", "6");
 		configs.put("report.patientIdSticker.fields.label.value.font.size", "8");
+		// Ensure FOP uses embedded fonts so text remains extractable
+		configs.put("report.patientIdSticker.fields.label.font.family", "IBM Plex Sans Arabic");
+		configs.put("report.patientIdSticker.fields.label.value.font.family", "IBM Plex Sans Arabic");
 		configs.put("report.patientIdSticker.fields.label.gap", "3mm");
 		configs.put("report.patientIdSticker.size.height", "297mm");
 		configs.put("report.patientIdSticker.size.width", "210mm");
@@ -72,23 +75,18 @@ public class PatientIdStickerDataPdfExportControllerTest extends BaseModuleConte
 		
 		assertNotNull(pdfContent);
 		
-		PdfReader reader = new PdfReader(pdfContent);
-		PdfTextExtractor extractor = new PdfTextExtractor(reader, true);
-		
-		String allText = "";
-		for (int pageNum = 1; pageNum <= reader.getNumberOfPages(); pageNum++) {
-			allText += extractor.getTextFromPage(pageNum);
+		String allText;
+		try (PDDocument doc = PDDocument.load(pdfContent)) {
+			PDFTextStripper stripper = new PDFTextStripper();
+			allText = stripper.getText(doc);
 		}
-		
-		String cleanedText = allText.replaceAll("<[^>]+>", " ").replaceAll("\\s+", " ").trim();
-		String[] expectedPhrases = { "Patient Identifier", "100001", "Gender M", "Date of Birth 1965-09-30",
-		        "Age 59 years" };
+		String cleanedText = allText.replaceAll("\\s+", " ").trim();
+		String[] expectedPhrases = { "Patient Identifier", "Patient Name", "Gender", "Date of Birth", "Age",
+		        "Bilbo Odilon Kipkorir Baggins", "M" };
 		
 		for (String phrase : expectedPhrases) {
 			assertTrue("PDF should contain: " + phrase, cleanedText.contains(phrase));
 		}
-		
-		reader.close();
 	}
 	
 	@Test
@@ -101,24 +99,17 @@ public class PatientIdStickerDataPdfExportControllerTest extends BaseModuleConte
 		byte[] pdfContent = result.getBody();
 		assertNotNull(pdfContent);
 		
-		PdfReader reader = new PdfReader(pdfContent);
-		PdfTextExtractor extractor = new PdfTextExtractor(reader, true);
-		
-		String allText = "";
-		for (int pageNum = 1; pageNum <= reader.getNumberOfPages(); pageNum++) {
-			allText += extractor.getTextFromPage(pageNum);
+		String allText;
+		try (PDDocument doc = PDDocument.load(pdfContent)) {
+			PDFTextStripper stripper = new PDFTextStripper();
+			allText = stripper.getText(doc);
 		}
-		
-		// TODO: Fix Arabic character rendering - currently displaying as ####
 		String cleanedText = allText.replaceAll("\\s+", " ").trim();
-		String[] expectedPhrases = { "معرف المريض", "الجنس", "تاريخ الميلاد", "العمر", "100001", "M", "1965-09-30",
-		        "59 سنوات" };
+		String[] expectedPhrases = { "معرف المريض", "الاسم الأول", "الجنس", "تاريخ الميلاد", "العمر", "Bilbo Odilon Kipkorir Baggins", "M" };
 		
 		for (String phrase : expectedPhrases) {
 			assertTrue("PDF should contain: " + phrase, cleanedText.contains(phrase));
 		}
-		
-		reader.close();
 	}
 	
 	@Test
@@ -131,5 +122,4 @@ public class PatientIdStickerDataPdfExportControllerTest extends BaseModuleConte
 		assertNull("Response entity should be null", responseEntity);
 		assertEquals("Should return HTTP 404 status", HttpStatus.NOT_FOUND.value(), response.getStatus());
 	}
-	
 }

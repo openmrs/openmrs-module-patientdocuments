@@ -54,7 +54,6 @@ public class PatientIdStickerDataPdfExportControllerTest extends BaseModuleWebCo
 		configs.put("report.patientIdSticker.fields.fulladdress", "true");
 		configs.put("report.patientIdSticker.fields.label.font.size", "6");
 		configs.put("report.patientIdSticker.fields.label.value.font.size", "8");
-		// Ensure FOP uses embedded fonts so text remains extractable
 		configs.put("report.patientIdSticker.fields.label.font.family", "IBM Plex Sans Arabic");
 		configs.put("report.patientIdSticker.fields.label.value.font.family", "IBM Plex Sans Arabic");
 		configs.put("report.patientIdSticker.fields.label.gap", "3mm");

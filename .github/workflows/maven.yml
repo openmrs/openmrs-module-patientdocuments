@@ -1,4 +1,3 @@
-# this build is designed to replicate the Travis CI workflow
 name: Build with Maven
 
 on:

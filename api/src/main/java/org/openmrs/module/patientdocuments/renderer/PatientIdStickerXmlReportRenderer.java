@@ -199,15 +199,15 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 		Element templatePIDElement = doc.createElement("patientIdSticker");
 		
 		// Set Label names to use in template layouts
-		MessageSourceService i18nTranslator = Context.getMessageSourceService();
-		String patientIdKey = i18nTranslator.getMessage("patientdocuments.patientIdSticker.fields.identifier");
-		String patientSecondaryIdKey = i18nTranslator
+		MessageSourceService messageSourceService = Context.getMessageSourceService();
+		String patientIdKey = messageSourceService.getMessage("patientdocuments.patientIdSticker.fields.identifier");
+		String patientSecondaryIdKey = messageSourceService
 		        .getMessage("patientdocuments.patientIdSticker.fields.secondaryIdentifier");
-		String patientNameKey = i18nTranslator.getMessage("patientdocuments.patientIdSticker.fields.patientname");
-		String genderKey = i18nTranslator.getMessage("patientdocuments.patientIdSticker.fields.gender");
-		String dobKey = i18nTranslator.getMessage("patientdocuments.patientIdSticker.fields.dob");
-		String ageKey = i18nTranslator.getMessage("patientdocuments.patientIdSticker.fields.age");
-		String addressKey = i18nTranslator.getMessage("patientdocuments.patientIdSticker.fields.fulladdress");
+		String patientNameKey = messageSourceService.getMessage("patientdocuments.patientIdSticker.fields.patientname");
+		String genderKey = messageSourceService.getMessage("patientdocuments.patientIdSticker.fields.gender");
+		String dobKey = messageSourceService.getMessage("patientdocuments.patientIdSticker.fields.dob");
+		String ageKey = messageSourceService.getMessage("patientdocuments.patientIdSticker.fields.age");
+		String addressKey = messageSourceService.getMessage("patientdocuments.patientIdSticker.fields.fulladdress");
 		
 		templatePIDElement.setAttribute("addressKey", addressKey);
 		templatePIDElement.setAttribute("patientIdKey", patientIdKey);
@@ -310,14 +310,14 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 			templatePIDElement.appendChild(fields);
 			
 			MessageSourceService messageSourceService = Context.getMessageSourceService();
-			String patientIdKey = i18nTranslator.getMessage("patientdocuments.patientIdSticker.fields.identifier");
-			String patientSecondaryIdKey = i18nTranslator
+			String patientIdKey = messageSourceService.getMessage("patientdocuments.patientIdSticker.fields.identifier");
+			String patientSecondaryIdKey = messageSourceService
 			        .getMessage("patientdocuments.patientIdSticker.fields.secondaryIdentifier");
-			String patientNameKey = i18nTranslator.getMessage("patientdocuments.patientIdSticker.fields.patientname");
-			String genderKey = i18nTranslator.getMessage("patientdocuments.patientIdSticker.fields.gender");
-			String dobKey = i18nTranslator.getMessage("patientdocuments.patientIdSticker.fields.dob");
-			String ageKey = i18nTranslator.getMessage("patientdocuments.patientIdSticker.fields.age");
-			String addressKey = i18nTranslator.getMessage("patientdocuments.patientIdSticker.fields.fulladdress");
+			String patientNameKey = messageSourceService.getMessage("patientdocuments.patientIdSticker.fields.patientname");
+			String genderKey = messageSourceService.getMessage("patientdocuments.patientIdSticker.fields.gender");
+			String dobKey = messageSourceService.getMessage("patientdocuments.patientIdSticker.fields.dob");
+			String ageKey = messageSourceService.getMessage("patientdocuments.patientIdSticker.fields.age");
+			String addressKey = messageSourceService.getMessage("patientdocuments.patientIdSticker.fields.fulladdress");
 			
 			// Get configured secondary ID type
 			String secondaryIdTypeUuid = getInitializerService()

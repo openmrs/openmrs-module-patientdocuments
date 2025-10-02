@@ -33,8 +33,7 @@ public class PatientIdStickerXmlReportRendererTest extends BaseModuleContextSens
 	
 	@Test
 	public void getBytes_shouldThrowWhenPatientIsMissing() throws Exception {
-		Patient badPatient = new Patient();
-		badPatient.setUuid("");
+		Patient badPatient = null;
 		Assertions.assertThrows(IllegalArgumentException.class, () -> {
 			pdfReport.getBytes(badPatient);
 		});

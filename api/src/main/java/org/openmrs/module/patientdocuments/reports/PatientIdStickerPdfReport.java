@@ -7,7 +7,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import javax.xml.transform.OutputKeys;
@@ -22,8 +21,6 @@ import javax.xml.transform.stream.StreamSource;
 import org.apache.fop.configuration.Configuration;
 import org.apache.fop.configuration.ConfigurationException;
 import org.apache.fop.configuration.DefaultConfigurationBuilder;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.fop.apps.FOUserAgent;
 import org.apache.fop.apps.Fop;
 import org.apache.fop.apps.FopFactory;
@@ -71,14 +68,14 @@ public class PatientIdStickerPdfReport {
 		}
 		catch (Exception e) {
 			String patientId = patient != null ? patient.getUuid() : "null";
-			log.error("Error generating patient ID sticker for patient '{}'", patientId, e);
-			throw new RuntimeException("Failed to generate patient ID sticker", e);
+			log.error("Failed to generate patient ID sticker for patient '{}'", patientId, e);
+			throw new RuntimeException("Failed to generate patient ID sticker for patient: " + patientId, e);
 		}
 	}
 	
 	private void validatePatientAndPrivileges(Patient patient) {
 		Context.requirePrivilege(PatientDocumentsPrivilegeConstants.VIEW_PATIENT_ID_STICKER);
-		if (patient == null || StringUtils.isEmpty(patient.getUuid())) {
+		if (patient == null) {
 			throw new IllegalArgumentException("Patient cannot be null");
 		}
 	}
@@ -132,24 +129,20 @@ public class PatientIdStickerPdfReport {
 	
 	private InputStream getXslInputStream(String stylesheetName) throws IOException {
 		log.info("Loading XSL stylesheet '{}'", stylesheetName);
-		try (InputStream xslStream = OpenmrsClassLoader.getInstance().getResourceAsStream(stylesheetName)) {
-			if (xslStream == null) {
-				throw new IOException("XSL stylesheet not found: " + stylesheetName);
-			}
-			
-			String xslContent = IOUtils.toString(xslStream, StandardCharsets.UTF_8.name());
-			xslContent = xslContent.trim();
-			
-			return new ByteArrayInputStream(xslContent.getBytes(StandardCharsets.UTF_8));
+		InputStream xslStream = OpenmrsClassLoader.getInstance().getResourceAsStream(stylesheetName);
+		if (xslStream == null) {
+			throw new IOException("XSL stylesheet not found: " + stylesheetName);
 		}
+		return xslStream;
 	}
 	
 	private void writeToOutputStream(StreamSource xmlSource, StreamSource xslSource, OutputStream outStream)
 	        throws TransformerException, SAXException, IOException, ConfigurationException, URISyntaxException {
+		if (xslSource == null) {
+			throw new IllegalArgumentException("XSL source cannot be null");
+		}
+
 		try (InputStream fopConfigStream = OpenmrsClassLoader.getInstance().getResourceAsStream(FOP_CONFIG_PATH)) {
-			if (xslSource == null) {
-				throw new IllegalArgumentException("XSL source cannot be null");
-			}
 			if (fopConfigStream == null) {
 				throw new IOException("FOP configuration file not found: " + FOP_CONFIG_PATH);
 			}

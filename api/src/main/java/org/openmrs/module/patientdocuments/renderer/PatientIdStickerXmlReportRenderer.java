@@ -124,7 +124,7 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 			docBuilder = docFactory.newDocumentBuilder();
 		}
 		catch (ParserConfigurationException e) {
-			throw new RenderingException(e.getLocalizedMessage(), new Throwable(e));
+			throw new RenderingException(e.getLocalizedMessage(), e);
 		}
 		
 		// Root element

@@ -56,7 +56,7 @@ public class PatientIdStickerReportManager extends BaseReportManager {
 	
 	@Override
 	public String getDescription() {
-		return StringUtils.EMPTY;
+		return "";
 	}
 	
 	private Parameter getPatientParameter() {

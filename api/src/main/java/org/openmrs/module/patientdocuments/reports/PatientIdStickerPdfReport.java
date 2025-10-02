@@ -131,7 +131,7 @@ public class PatientIdStickerPdfReport {
 	}
 	
 	private InputStream getXslInputStream(String stylesheetName) throws IOException {
-		log.info("Loading XSL stylesheet: {}", stylesheetName);
+		log.info("Loading XSL stylesheet '{}'", stylesheetName);
 		try (InputStream xslStream = OpenmrsClassLoader.getInstance().getResourceAsStream(stylesheetName)) {
 			if (xslStream == null) {
 				throw new IOException("XSL stylesheet not found: " + stylesheetName);

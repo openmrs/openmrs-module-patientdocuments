@@ -309,7 +309,7 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 			Element fields = doc.createElement("fields");
 			templatePIDElement.appendChild(fields);
 			
-			MessageSourceService i18nTranslator = Context.getMessageSourceService();
+			MessageSourceService messageSourceService = Context.getMessageSourceService();
 			String patientIdKey = i18nTranslator.getMessage("patientdocuments.patientIdSticker.fields.identifier");
 			String patientSecondaryIdKey = i18nTranslator
 			        .getMessage("patientdocuments.patientIdSticker.fields.secondaryIdentifier");

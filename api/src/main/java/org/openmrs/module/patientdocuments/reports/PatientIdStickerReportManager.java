@@ -14,9 +14,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
-import org.openmrs.api.context.Context;
 import org.openmrs.module.patientdocuments.common.PatientDocumentsConstants;
 import org.openmrs.module.patientdocuments.library.PatientIdStickerDataSetDefinition;
 import org.openmrs.module.patientdocuments.renderer.PatientIdStickerXmlReportRenderer;
@@ -24,13 +22,12 @@ import org.openmrs.module.reporting.evaluation.parameter.Parameter;
 import org.openmrs.module.reporting.report.ReportDesign;
 import org.openmrs.module.reporting.report.definition.ReportDefinition;
 import org.openmrs.module.reporting.report.manager.BaseReportManager;
-import org.openmrs.module.reporting.report.service.ReportService;
 import org.springframework.stereotype.Component;
 
 @Component(PatientDocumentsConstants.COMPONENT_REPORTMANAGER_PATIENT_ID_STICKER)
 public class PatientIdStickerReportManager extends BaseReportManager {
 	
-	public static final String REPORT_DESIGN_UUID = UUID.randomUUID().toString();
+	public static final String REPORT_DESIGN_UUID = "68d04cbd-7a85-48df-9c70-677bc1a500e8";
 	
 	public static final String REPORT_DEFINITION_NAME = "Patient Identifier Sticker";
 	
@@ -88,14 +85,6 @@ public class PatientIdStickerReportManager extends BaseReportManager {
 	
 	@Override
 	public List<ReportDesign> constructReportDesigns(ReportDefinition reportDefinition) {
-		List<ReportDesign> existingDesigns = Context.getService(ReportService.class).getReportDesigns(reportDefinition,
-		    PatientIdStickerXmlReportRenderer.class, true);
-		for (ReportDesign design : existingDesigns) {
-			if (PATIENT_ID_STICKER_PDF_NAME.equals(design.getName())) {
-				return Arrays.asList(design);
-			}
-		}
-		
 		ReportDesign reportDesign = new ReportDesign();
 		reportDesign.setName(PATIENT_ID_STICKER_PDF_NAME);
 		reportDesign.setUuid(REPORT_DESIGN_UUID);

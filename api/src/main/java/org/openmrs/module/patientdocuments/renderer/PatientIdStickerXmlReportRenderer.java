@@ -13,12 +13,7 @@ import static org.openmrs.module.patientdocuments.reports.PatientIdStickerReport
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -62,7 +57,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 @Component
 @Handler
-@Localized("reporting.XmlReportRenderer")
+@Localized("patientdocuments.patientIdStickerXmlReportRenderer")
 public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 	
 	private MessageSourceService mss;
@@ -224,7 +219,7 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 		Element header = doc.createElement("header");
 		// Handle logo if configured		
 		String logoUrlPath = getInitializerService().getValueFromKey("report.patientIdSticker.logourl");
-		if (!StringUtils.isBlank(logoUrlPath) && logoUrlPath.startsWith("http")) {
+		if (!StringUtils.isBlank(logoUrlPath)) {
 			configureLogo(doc, header, logoUrlPath);
 		}
 		
@@ -249,29 +244,21 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 	}
 	
 	private void configureLogo(Document doc, Element header, String logoUrlPath) {
-		try {
-			URL url = new URL(logoUrlPath);
-			String logoPath = url.getPath();
-			File logoFile = new File(logoPath);
-			
-			if (!(logoFile.exists() && logoFile.canRead() && logoFile.isAbsolute())) {
-				HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-				connection.setRequestMethod("GET");
-				InputStream is = connection.getInputStream();
-				File tempFile = File.createTempFile("logo", ".png");
-				Files.copy(is, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-				logoPath = tempFile.getAbsolutePath();
-			}
-			
-			Element branding = doc.createElement("branding");
-			Element image = doc.createElement("logo");
-			image.setTextContent(logoPath);
-			branding.appendChild(image);
-			header.appendChild(branding);
+		String logoPath;
+		File logoFile = new File(logoUrlPath);
+		boolean isValidFile = logoFile.exists() && logoFile.canRead() && logoFile.isAbsolute();
+		
+		if (isValidFile) {
+			logoPath = logoFile.getAbsolutePath();
+		} else {
+			throw new RenderingException("Logo file not found or not accessible: " + logoUrlPath);
 		}
-		catch (IOException e) {
-			throw new RenderingException("Failed to configure logo", e);
-		}
+		
+		Element branding = doc.createElement("branding");
+		Element image = doc.createElement("logo");
+		image.setTextContent(logoPath);
+		branding.appendChild(image);
+		header.appendChild(branding);
 	}
 	
 	private Map<String, String> createConfigKeyMap() {

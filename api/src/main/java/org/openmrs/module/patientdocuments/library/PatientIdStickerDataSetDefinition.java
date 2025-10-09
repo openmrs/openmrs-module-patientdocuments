@@ -16,7 +16,7 @@ import org.openmrs.module.reporting.common.Localized;
 /**
  * A dataset definition that fetches patient data using the OpenMRS API and returns it as JSON.
  */
-@Localized("reporting.PatientIdStickerDataSetDefinition")
+@Localized("patientdocuments.patientIdStickerDataSetDefinition")
 public class PatientIdStickerDataSetDefinition extends BaseDataSetDefinition {
 	
 	private static final long serialVersionUID = 1L;

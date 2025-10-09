@@ -58,7 +58,7 @@ public class PatientIdStickerPdfReport {
 	@Autowired
 	private InitializerService initializerService;
 	
-	public byte[] getBytes(Patient patient) throws RuntimeException {
+	public byte[] generatePdf(Patient patient) throws RuntimeException {
 		validatePatientAndPrivileges(patient);
 		
 		try {

@@ -26,16 +26,15 @@ public class PatientIdStickerXmlReportRendererTest extends BaseModuleContextSens
 	
 	@BeforeEach
 	public void setup() throws Exception {
-		initializeInMemoryDatabase();
 		executeDataSet("org/openmrs/module/patientdocuments/include/patientIdStickerManagerTestDataset.xml");
 		ReportManagerUtil.setupReport(new PatientIdStickerReportManager());
 	}
 	
 	@Test
-	public void getBytes_shouldThrowWhenPatientIsMissing() throws Exception {
+	public void generatePdf_shouldThrowWhenPatientIsMissing() throws Exception {
 		Patient badPatient = null;
 		Assertions.assertThrows(IllegalArgumentException.class, () -> {
-			pdfReport.getBytes(badPatient);
+			pdfReport.generatePdf(badPatient);
 		});
 	}
 	

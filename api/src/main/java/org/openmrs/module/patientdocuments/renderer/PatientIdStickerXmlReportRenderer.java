@@ -9,6 +9,7 @@
  */
 package org.openmrs.module.patientdocuments.renderer;
 
+import static org.apache.commons.lang.StringUtils.isNotBlank;
 import static org.openmrs.module.patientdocuments.reports.PatientIdStickerReportManager.DATASET_KEY_STICKER_FIELDS;
 
 import java.io.File;
@@ -31,7 +32,6 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.apache.commons.lang.StringUtils;
 import org.openmrs.annotation.Handler;
 import org.openmrs.api.context.Context;
 import org.openmrs.messagesource.MessageSourceService;
@@ -152,40 +152,35 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 	private void configureStickerDimensions(Element rootElement) {
 		String stickerHeight = getInitializerService().getValueFromKey("report.patientIdSticker.size.height");
 		String stickerWidth = getInitializerService().getValueFromKey("report.patientIdSticker.size.width");
-		if (isNotNullOrEmpty(stickerHeight) && isNotNullOrEmpty(stickerWidth)) {
-			rootElement.setAttribute("sticker-height", stickerHeight);
-			rootElement.setAttribute("sticker-width", stickerWidth);
-		} else {
-			rootElement.setAttribute("sticker-height", "297mm");
-			rootElement.setAttribute("sticker-width", "210mm");
-		}
+		rootElement.setAttribute("sticker-height",isNotBlank(stickerHeight) ? stickerHeight : "297mm");
+		rootElement.setAttribute("sticker-width",isNotBlank(stickerWidth) ? stickerWidth : "297mm");
 	}
 	
 	private void configureFontSettings(Element rootElement) {
 		String labelFontSize = getInitializerService().getValueFromKey("report.patientIdSticker.fields.label.font.size");
-		if (isNotNullOrEmpty(labelFontSize)) {
+		if (isNotBlank(labelFontSize)) {
 			rootElement.setAttribute("label-font-size", labelFontSize);
 		}
 		
 		String labelFontFamily = getInitializerService().getValueFromKey("report.patientIdSticker.fields.label.font.family");
-		if (isNotNullOrEmpty(labelFontFamily)) {
+		if (isNotBlank(labelFontFamily)) {
 			rootElement.setAttribute("label-font-family", labelFontFamily);
 		}
 		
 		String valueFontSize = getInitializerService()
 		        .getValueFromKey("report.patientIdSticker.fields.label.value.font.size");
-		if (isNotNullOrEmpty(valueFontSize)) {
+		if (isNotBlank(valueFontSize)) {
 			rootElement.setAttribute("value-font-size", valueFontSize);
 		}
 		
 		String valueFontfamily = getInitializerService()
 		        .getValueFromKey("report.patientIdSticker.fields.label.value.font.family");
-		if (isNotNullOrEmpty(valueFontfamily)) {
+		if (isNotBlank(valueFontfamily)) {
 			rootElement.setAttribute("value-font-family", valueFontfamily);
 		}
 		
 		String fieldVerticalGap = getInitializerService().getValueFromKey("report.patientIdSticker.fields.label.gap");
-		if (isNotNullOrEmpty(fieldVerticalGap)) {
+		if (isNotBlank(fieldVerticalGap)) {
 			rootElement.setAttribute("field-vertical-gap", fieldVerticalGap);
 		}
 	}
@@ -219,7 +214,7 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 		Element header = doc.createElement("header");
 		// Handle logo if configured		
 		String logoUrlPath = getInitializerService().getValueFromKey("report.patientIdSticker.logourl");
-		if (!StringUtils.isBlank(logoUrlPath)) {
+		if (isNotBlank(logoUrlPath)) {
 			configureLogo(doc, header, logoUrlPath);
 		}
 		
@@ -424,7 +419,7 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 	
 	private void createMultipleStickers(Document doc, Element templatePIDElement, Element rootElement) {
 		String numOfIdStickersValue = getInitializerService().getValueFromKey("report.patientIdSticker.pages");
-		int numOfIdStickers = Integer.parseInt(isNotNullOrEmpty(numOfIdStickersValue) ? numOfIdStickersValue : "1");
+		int numOfIdStickers = Integer.parseInt(isNotBlank(numOfIdStickersValue) ? numOfIdStickersValue : "1");
 		for (int i = 1; i <= numOfIdStickers; i++) {
 			Element clonedPidElement = (Element) templatePIDElement.cloneNode(true);
 			clonedPidElement.setAttribute("page", "Page-" + i);
@@ -451,9 +446,5 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 		catch (TransformerException e) {
 			throw new RenderingException(e.getLocalizedMessage(), new Throwable(e));
 		}
-	}
-	
-	private boolean isNotNullOrEmpty(String str) {
-		return !StringUtils.isBlank(str);
 	}
 }

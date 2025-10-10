@@ -20,17 +20,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openmrs.module.reporting.report.ReportDesign;
 import org.openmrs.module.reporting.report.definition.ReportDefinition;
-import org.openmrs.module.reporting.report.definition.service.ReportDefinitionService;
-import org.openmrs.module.reporting.report.service.ReportService;
 import org.openmrs.test.jupiter.BaseModuleContextSensitiveTest;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.openmrs.module.reporting.report.manager.ReportManagerUtil;
 
 public class PatientIdStickerReportManagerTest extends BaseModuleContextSensitiveTest {
 	
 	@BeforeEach
 	public void setUp() throws Exception {
-		initializeInMemoryDatabase();
 		executeDataSet("org/openmrs/module/patientdocuments/include/patientIdStickerManagerTestDataset.xml");
 		ReportManagerUtil.setupReport(new PatientIdStickerReportManager());
 	}

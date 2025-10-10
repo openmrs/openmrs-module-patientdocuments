@@ -5,7 +5,7 @@
 
 <hibernate-configuration>
     <session-factory>
-        <property name="connection.url">jdbc:h2:./target/testdb_omod;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE</property>
+        <property name="connection.url">jdbc:h2:mem:openmrs;DB_CLOSE_DELAY=-1</property>
         <!-- Reporting -->
         <mapping resource="ReportDesign.hbm.xml"/>
         <mapping resource="ReportRequest.hbm.xml"/>

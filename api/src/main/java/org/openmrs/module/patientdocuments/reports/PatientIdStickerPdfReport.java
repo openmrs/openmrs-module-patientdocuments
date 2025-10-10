@@ -67,7 +67,7 @@ public class PatientIdStickerPdfReport {
 			return transformXmlToPdf(xmlBytes);
 		}
 		catch (Exception e) {
-			String patientId = patient != null ? patient.getUuid() : "null";
+			String patientId = patient.getUuid();
 			log.error("Failed to generate patient ID sticker for patient '{}'", patientId, e);
 			throw new RuntimeException("Failed to generate patient ID sticker for patient: " + patientId, e);
 		}

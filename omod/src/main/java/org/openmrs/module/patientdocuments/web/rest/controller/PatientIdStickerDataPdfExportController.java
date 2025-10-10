@@ -51,7 +51,7 @@ public class PatientIdStickerDataPdfExportController extends BaseRestController 
 	
 	private ResponseEntity<byte[]> writeResponse(Patient patient, boolean inline) {
 		try {
-			byte[] pdfBytes = pdfReport.getBytes(patient);
+			byte[] pdfBytes = pdfReport.generatePdf(patient);
 			
 			HttpHeaders headers = new HttpHeaders();
 			headers.set("Content-Type", "application/pdf");

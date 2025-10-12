@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<dataset>
+	
+	<person uuid="5e81906d-84d2-45ed-84da-912109977026" person_id="100001" gender="M" birthdate="1965-09-30" birthtime="12:34:56" date_created="2020-01-21 00:00:00.0" voided="0" dead="0"/>
+
+    <person_name uuid="f0e0225d-77f7-46f3-b2dd-9994bbb635ec" person_name_id="10" person_id="100001" given_name="Bilbo Odilon"  family_name="Baggins" date_created="2020-01-21 00:00:00.0" voided="0"/>
+
+	<patient patient_id="100001" date_created="2014-01-09 00:00:00.0" voided="0"/>
+
+	<patient_identifier patient_identifier_id="100001" patient_id="100001" identifier="100001" identifier_type="2" preferred="1" creator="1" uuid="E866EE0E-528D-48C3-AC5B-9D1128B9683C" date_created="2020-01-21 00:00:00.0" voided="0"/>
+
+</dataset>

@@ -13,7 +13,7 @@ import static org.openmrs.module.patientdocuments.common.PatientDocumentsConstan
 import static org.openmrs.module.patientdocuments.common.PatientDocumentsConstants.MODULE_ARTIFACT_ID;
 
 import javax.servlet.http.HttpServletResponse;
-
+import org.openmrs.api.AdministrationService;
 import org.openmrs.Patient;
 import org.openmrs.api.PatientService;
 import org.openmrs.module.patientdocuments.reports.PatientIdStickerPdfReport;
@@ -36,8 +36,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequestMapping(value = "/rest/" + RestConstants.VERSION_1 + "/" + MODULE_ARTIFACT_ID + "/" + PATIENT_ID_STICKER_ID)
 public class PatientIdStickerDataPdfExportController extends BaseRestController {
 	
-	private static final Logger logger = LoggerFactory.getLogger(PatientIdStickerDataPdfExportController.class);
 	
+	@Autowired
+	private AdministrationService administrationService;
+
+	private static final Logger logger = LoggerFactory.getLogger(PatientIdStickerDataPdfExportController.class);
+
+	public static final String REPORT_DESIGN_UUID_KEY = "report.patientIdSticker.patientIdStickerReportDesignUuid";
+
 	private PatientIdStickerPdfReport pdfReport;
 	
 	private PatientService ps;
@@ -51,7 +57,12 @@ public class PatientIdStickerDataPdfExportController extends BaseRestController 
 	
 	private ResponseEntity<byte[]> writeResponse(Patient patient, boolean inline) {
 		try {
-			byte[] pdfBytes = pdfReport.generatePdf(patient);
+
+			String reportDesignUuid = administrationService.getGlobalProperty(REPORT_DESIGN_UUID_KEY);
+			if(reportDesignUuid == null || reportDesignUuid.isEmpty()){
+				throw new IllegalStateException("Report Design UUID is not configured");
+			}
+			byte[] pdfBytes = pdfReport.generatePdf(patient , reportDesignUuid);
 			
 			HttpHeaders headers = new HttpHeaders();
 			headers.set("Content-Type", "application/pdf");

@@ -15,6 +15,9 @@ import static org.openmrs.module.patientdocuments.reports.PatientIdStickerReport
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -46,6 +49,7 @@ import org.openmrs.module.reporting.report.ReportRequest;
 import org.openmrs.module.reporting.report.renderer.RenderingException;
 import org.openmrs.module.reporting.report.renderer.ReportDesignRenderer;
 import org.openmrs.module.reporting.report.renderer.ReportRenderer;
+import org.openmrs.util.OpenmrsClassLoader;
 import org.springframework.stereotype.Component;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -239,16 +243,24 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 	}
 	
 	private void configureLogo(Document doc, Element header, String logoUrlPath) {
-		String logoPath;
+		String logoPath = "";
 		File logoFile = new File(logoUrlPath);
 		boolean isValidFile = logoFile.exists() && logoFile.canRead() && logoFile.isAbsolute();
 		
 		if (isValidFile) {
 			logoPath = logoFile.getAbsolutePath();
 		} else {
-			throw new RenderingException("Logo file not found or not accessible: " + logoUrlPath);
+			try {
+				URL res = OpenmrsClassLoader.getInstance().getResource(logoUrlPath);
+
+				if (res != null) {
+					logoPath = Paths.get(res.toURI()).toString();
+				}
+			}
+			catch (URISyntaxException e) {
+				throw new RenderingException("Logo file not found or not accessible: " + logoUrlPath);
+			}
 		}
-		
 		Element branding = doc.createElement("branding");
 		Element image = doc.createElement("logo");
 		image.setTextContent(logoPath);
@@ -365,15 +377,16 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 						
 						// Process address
 						if (shouldIncludeColumn("patientdocuments.patientIdSticker.fields.fulladdress")) {
-							Map<String, String> addressData = (Map<String, String>) patientData.get("preferredAddress");
-							if (addressData != null) {
+							List<Map<String, String>> addressData = (List<Map<String, String>>) patientData.get("addresses");
+							if (addressData != null && !addressData.isEmpty()) {
+								Map<String, String> preferredAddress = addressData.get(0);
 								StringBuilder address = new StringBuilder();
-								appendIfNotNull(address, addressData.get("address1"));
-								appendIfNotNull(address, addressData.get("address2"));
-								appendIfNotNull(address, addressData.get("cityVillage"));
-								appendIfNotNull(address, addressData.get("stateProvince"));
-								appendIfNotNull(address, addressData.get("country"));
-								appendIfNotNull(address, addressData.get("postalCode"));
+								appendIfNotNull(address, preferredAddress.get("address1"));
+								appendIfNotNull(address, preferredAddress.get("address2"));
+								appendIfNotNull(address, preferredAddress.get("cityVillage"));
+								appendIfNotNull(address, preferredAddress.get("stateProvince"));
+								appendIfNotNull(address, preferredAddress.get("country"));
+								appendIfNotNull(address, preferredAddress.get("postalCode"));
 								
 								if (address.length() > 0) {
 									addField(doc, fields, addressKey, address.toString().trim());

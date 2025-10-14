@@ -7,7 +7,7 @@
     <!-- Attribute for dynamic page height and width -->
     <xsl:variable name="sticker-height" select="/patientIdStickers/@sticker-height"/>
     <xsl:variable name="sticker-width" select="/patientIdStickers/@sticker-width"/>
-    
+
     <!-- Calculate effective body height (page height minus margins) -->
     <xsl:variable name="body-height" select="concat(number(substring-before($sticker-height, 'mm')) - 4, 'mm')"/>
     <xsl:variable name="body-height-value" select="number(substring-before($sticker-height, 'mm')) - 4"/>
@@ -80,7 +80,7 @@
             <fo:layout-master-set>
                 <fo:simple-page-master master-name="sticker" 
                     page-width="{$sticker-width}" page-height="{$sticker-height}"
-                    margin="1.5mm">
+                    margin="3mm">
                     <fo:region-body margin="0"/>
                 </fo:simple-page-master>
             </fo:layout-master-set>
@@ -211,6 +211,17 @@
                     
                     <!-- Main data section -->
                     <fo:block-container height="{$table-height}" display-align="before">
+                        <xsl:if test="fields/field[@label = $patientSecondaryIdKey]">
+                            <fo:block-container margin-bottom="{$field-vertical-gap}">
+                                <fo:block font-size="{$label-font-size}pt" font-weight="normal" font-family="{$label-font-family}" color="#444444">
+                                    <xsl:value-of select="fields/field[@label = $patientSecondaryIdKey]/@label"/>
+                                </fo:block>
+                                <fo:block font-size="{$title-font-size}pt" font-weight="bold" font-family="{$value-font-family}"  margin-top="0.2mm">
+                                    <xsl:value-of select="fields/field[@label = $patientSecondaryIdKey]"/>
+                                </fo:block>
+                            </fo:block-container>
+                        </xsl:if>
+
                         <xsl:if test="fields/field[@label = $patientIdKey]">
                             <fo:block-container margin-bottom="{$field-vertical-gap}">
                                 <fo:block font-size="{$label-font-size}pt" font-weight="normal" font-family="{$label-font-family}" color="#444444">
@@ -235,17 +246,16 @@
                         
                         <xsl:for-each select="fields/field[
                             @label != $patientNameKey and
+                            @label != $patientSecondaryIdKey and
                             @label != $patientIdKey]">
-                            <xsl:if test="not(preceding-sibling::field[@label = current()/@label])">
-                                <fo:block-container margin-bottom="{$field-vertical-gap}">
-                                    <fo:block font-size="{$label-font-size}pt" font-weight="normal" font-family="{$label-font-family}" color="#444444">
-                                        <xsl:value-of select="@label"/>
-                                    </fo:block>
-                                    <fo:block font-size="{$title-font-size}pt" font-weight="bold" font-family="{$value-font-family}" margin-top="0.2mm">
-                                        <xsl:value-of select="."/>
-                                    </fo:block>
-                                </fo:block-container>
-                            </xsl:if>
+                            <fo:block-container margin-bottom="{$field-vertical-gap}">
+                                <fo:block font-size="{$label-font-size}pt" font-weight="normal" font-family="{$label-font-family}" color="#444444">
+                                    <xsl:value-of select="@label"/>
+                                </fo:block>
+                                <fo:block font-size="{$title-font-size}pt" font-weight="bold" font-family="{$value-font-family}" margin-top="0.2mm">
+                                    <xsl:value-of select="."/>
+                                </fo:block>
+                            </fo:block-container>
                         </xsl:for-each>
                     </fo:block-container>
                 </fo:block-container>

@@ -35,14 +35,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 @Controller
 @RequestMapping(value = "/rest/" + RestConstants.VERSION_1 + "/" + MODULE_ARTIFACT_ID + "/" + PATIENT_ID_STICKER_ID)
 public class PatientIdStickerDataPdfExportController extends BaseRestController {
-	
-	
-	@Autowired
-	private AdministrationService administrationService;
+
 
 	private static final Logger logger = LoggerFactory.getLogger(PatientIdStickerDataPdfExportController.class);
 
 	public static final String REPORT_DESIGN_UUID_KEY = "report.patientIdSticker.patientIdStickerReportDesignUuid";
+//Default UUID 
+	public static final String DEFAULT_REPORT_DESIGN_UUID = "abc13-234cba-1232--bfg-bfg";
 
 	private PatientIdStickerPdfReport pdfReport;
 	
@@ -57,10 +56,11 @@ public class PatientIdStickerDataPdfExportController extends BaseRestController 
 	
 	private ResponseEntity<byte[]> writeResponse(Patient patient, boolean inline) {
 		try {
-
-			String reportDesignUuid = administrationService.getGlobalProperty(REPORT_DESIGN_UUID_KEY);
+//Value configured via initializer
+			String reportDesignUuid = PatientDocumentsConfig.PATIENT_ID_STICKER_ID_REPORT_DESIGN_UUID;
 			if(reportDesignUuid == null || reportDesignUuid.isEmpty()){
-				throw new IllegalStateException("Report Design UUID is not configured");
+			logger.warn("UUID not configured in PatientDocumentsConfig. Fall back to default UUID.");
+			reportDesignUuid = DEFAULT_REPORT_DESIGN_UUID;
 			}
 			byte[] pdfBytes = pdfReport.generatePdf(patient , reportDesignUuid);
 			

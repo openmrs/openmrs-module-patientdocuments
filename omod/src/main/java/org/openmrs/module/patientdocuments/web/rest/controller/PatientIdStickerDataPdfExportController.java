@@ -12,7 +12,13 @@ package org.openmrs.module.patientdocuments.web.rest.controller;
 import static org.openmrs.module.patientdocuments.common.PatientDocumentsConstants.PATIENT_ID_STICKER_ID;
 import static org.openmrs.module.patientdocuments.common.PatientDocumentsConstants.MODULE_ARTIFACT_ID;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletRequest;
 
 import org.openmrs.Patient;
 import org.openmrs.api.PatientService;
@@ -49,9 +55,10 @@ public class PatientIdStickerDataPdfExportController extends BaseRestController 
 		this.pdfReport = pdfReport;
 	}
 	
-	private ResponseEntity<byte[]> writeResponse(Patient patient, boolean inline) {
+	private ResponseEntity<byte[]> writeResponse(Patient patient, boolean inline, ServletContext servletContext) {
 		try {
-			byte[] pdfBytes = pdfReport.generatePdf(patient);
+			byte[] defaultLogoBytes = loadDefaultLogo(servletContext);
+			byte[] pdfBytes = pdfReport.generatePdf(patient, defaultLogoBytes);
 			
 			HttpHeaders headers = new HttpHeaders();
 			headers.set("Content-Type", "application/pdf");
@@ -68,8 +75,41 @@ public class PatientIdStickerDataPdfExportController extends BaseRestController 
 		}
 	}
 	
+	private byte[] loadDefaultLogo(ServletContext servletContext) {
+		byte[] logoBytes = null;
+		if (servletContext != null) {
+			try (InputStream logoStream = servletContext.getResourceAsStream("/images/openmrs_logo_white_large.png")) {
+				if (logoStream != null) {
+					logger.info("Logo file found using ServletContext.getResourceAsStream()");
+					
+					// Read the stream into a byte array
+					logoBytes = inputStreamToByteArray(logoStream);
+					if (logoBytes != null) {
+						logger.info("Successfully read " + logoBytes.length + " bytes from logo file");
+					}
+				} else {
+					logger.warn("Logo file not found from default path");
+				}
+			} catch (IOException e) {
+				logger.warn("Error reading logo file: {}", e.getMessage());
+			}
+		}
+		return logoBytes;
+	}
+	
+	private byte[] inputStreamToByteArray(InputStream inputStream) throws IOException {
+		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+		byte[] data = new byte[1024];
+		int bytesRead;
+		while ((bytesRead = inputStream.read(data, 0, data.length)) != -1) {
+			buffer.write(data, 0, bytesRead);
+		}
+		return buffer.toByteArray();
+	}
+	
 	@RequestMapping(method = RequestMethod.GET)
 	public ResponseEntity<byte[]> getPatientIdSticker(HttpServletResponse response,
+	        HttpServletRequest request,
 	        @RequestParam(value = "patientUuid") String patientUuid,
 	        @RequestParam(value = "inline", required = false, defaultValue = "true") boolean inline) {
 		
@@ -79,6 +119,7 @@ public class PatientIdStickerDataPdfExportController extends BaseRestController 
 			return null;
 		}
 		
-		return writeResponse(patient, inline);
+		ServletContext servletContext = request.getSession().getServletContext();
+		return writeResponse(patient, inline, servletContext);
 	}
 }

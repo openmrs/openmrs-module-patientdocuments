@@ -50,6 +50,7 @@ import org.openmrs.module.reporting.report.renderer.RenderingException;
 import org.openmrs.module.reporting.report.renderer.ReportDesignRenderer;
 import org.openmrs.module.reporting.report.renderer.ReportRenderer;
 import org.openmrs.util.OpenmrsClassLoader;
+import org.openmrs.util.OpenmrsUtil;
 import org.springframework.stereotype.Component;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -63,6 +64,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Handler
 @Localized("patientdocuments.patientIdStickerXmlReportRenderer")
 public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
+	
+	private static final String DEFAULT_LOGO_CLASSPATH = "org/openmrs/ui/framework/images/openmrs-logo.png";
 	
 	private MessageSourceService mss;
 	
@@ -117,6 +120,10 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 	
 	@Override
 	public void render(ReportData results, String argument, OutputStream out) throws IOException, RenderingException {
+		render(results, argument, out, null);
+	}
+	
+	public void render(ReportData results, String argument, OutputStream out, byte[] defaultLogoBytes) throws IOException, RenderingException {
 		DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
 		DocumentBuilder docBuilder;
 		try {
@@ -141,7 +148,7 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 		Element templatePIDElement = createStickerTemplate(doc);
 		
 		// Handle header configuration
-		configureHeader(doc, templatePIDElement);
+		configureHeader(doc, templatePIDElement, defaultLogoBytes);
 		
 		// Process data set fields
 		processDataSetFields(results, doc, templatePIDElement);
@@ -214,12 +221,12 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 		return templatePIDElement;
 	}
 	
-	private void configureHeader(Document doc, Element templatePIDElement) {
+	private void configureHeader(Document doc, Element templatePIDElement, byte[] defaultLogoBytes) {
 		Element header = doc.createElement("header");
 		// Handle logo if configured		
 		String logoUrlPath = getInitializerService().getValueFromKey("report.patientIdSticker.logourl");
 		if (isNotBlank(logoUrlPath)) {
-			configureLogo(doc, header, logoUrlPath);
+			configureLogo(doc, header, logoUrlPath, defaultLogoBytes);
 		}
 		
 		boolean useHeader = Boolean.TRUE.equals(getInitializerService().getBooleanFromKey("report.patientIdSticker.header"));
@@ -242,25 +249,60 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 		templatePIDElement.appendChild(i18nStrings);
 	}
 	
-	private void configureLogo(Document doc, Element header, String logoUrlPath) {
+	/**
+	 * Configures the logo for the sticker document.
+	 * 
+	 * Logo resolution priority:
+	 * 1. Custom logo from file system (absolute or relative path)
+	 * 2. Default logo from webapp (if provided via byte array)
+	 * 3. Default OpenMRS logo from classpath
+	 * 
+	 * @param doc The XML document
+	 * @param header The header element to append the logo to
+	 * @param logoUrlPath User-configured logo path (can be null, absolute, or relative)
+	 * @param defaultLogoBytes Optional default logo from webapp (can be null)
+	 * @throws RenderingException if no valid logo can be found
+	 */
+	private void configureLogo(Document doc, Element header, String logoUrlPath, byte[] defaultLogoBytes) {
 		String logoPath = "";
-		File logoFile = new File(logoUrlPath);
-		boolean isValidFile = logoFile.exists() && logoFile.canRead() && logoFile.isAbsolute();
-		
-		if (isValidFile) {
-			logoPath = logoFile.getAbsolutePath();
-		} else {
-			try {
-				URL res = OpenmrsClassLoader.getInstance().getResource(logoUrlPath);
-
-				if (res != null) {
-					logoPath = Paths.get(res.toURI()).toString();
-				}
+		{System.out.println("Using custom logo from: "+ OpenmrsUtil.getApplicationDataDirectory());}
+		// Try to load custom logo from file system
+		if (logoUrlPath != null && !logoUrlPath.isEmpty()) {
+			File logoFile = new File(logoUrlPath);
+			
+			// Check if path is absolute first (cheap operation)
+			if (!logoFile.isAbsolute()) {
+				// Resolve relative paths against OPENMRS_APPLICATION_DIRECTORY
+				File appDataDir = OpenmrsUtil.getDirectoryInApplicationDataDirectory("");
+				logoFile = new File(appDataDir, logoUrlPath);
 			}
-			catch (URISyntaxException e) {
-				throw new RenderingException("Logo file not found or not accessible: " + logoUrlPath);
+			
+			// Now perform expensive file system checks
+			if (logoFile.exists() && logoFile.canRead()) {
+				logoPath = logoFile.getAbsolutePath();
+				{System.out.println("Using custom logo from: "+ logoPath);}
+			} else {
+				{System.out.println("Custom logo not found or not readable: " + logoUrlPath + " Falling back to default logo.");}
 			}
 		}
+		
+		// Fallback to default logo from webapp if provided
+		if (logoPath.isEmpty() && defaultLogoBytes != null && defaultLogoBytes.length > 0) {
+			try {
+				// Write the byte array to a temporary file and use its path
+				File tempFile = File.createTempFile("openmrs-logo-", ".png");
+				tempFile.deleteOnExit();
+				java.io.FileOutputStream fos = new java.io.FileOutputStream(tempFile);
+				fos.write(defaultLogoBytes);
+				fos.close();
+				logoPath = tempFile.getAbsolutePath();
+				{System.out.println("Using default logo from webapp (" + defaultLogoBytes.length + " bytes)");}
+			} catch (IOException e) {
+				{System.out.println("Error creating temp file for webapp logo: " + e.getMessage());}
+			}
+		}
+		
+		// Create and append logo elements
 		Element branding = doc.createElement("branding");
 		Element image = doc.createElement("logo");
 		image.setTextContent(logoPath);

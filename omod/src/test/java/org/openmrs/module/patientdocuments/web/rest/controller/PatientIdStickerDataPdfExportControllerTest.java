@@ -69,7 +69,7 @@ public class PatientIdStickerDataPdfExportControllerTest extends BaseModuleWebCo
 		Context.setLocale(Locale.ENGLISH);
 		MockHttpServletResponse response = new MockHttpServletResponse();
 		
-		ResponseEntity<byte[]> result = patientStickerController.getPatientIdSticker(response, TEST_PATIENT_UUID, false);
+		ResponseEntity<byte[]> result = patientStickerController.getPatientIdSticker(response, null, TEST_PATIENT_UUID, false);
 		byte[] pdfContent = result.getBody();
 		
 		assertNotNull(pdfContent);
@@ -93,7 +93,7 @@ public class PatientIdStickerDataPdfExportControllerTest extends BaseModuleWebCo
 		Context.setLocale(new Locale("ar", "AR"));
 		MockHttpServletResponse response = new MockHttpServletResponse();
 		
-		ResponseEntity<byte[]> result = patientStickerController.getPatientIdSticker(response, TEST_PATIENT_UUID, false);
+		ResponseEntity<byte[]> result = patientStickerController.getPatientIdSticker(response, null, TEST_PATIENT_UUID, false);
 		
 		byte[] pdfContent = result.getBody();
 		assertNotNull(pdfContent);
@@ -116,7 +116,7 @@ public class PatientIdStickerDataPdfExportControllerTest extends BaseModuleWebCo
 		MockHttpServletResponse response = new MockHttpServletResponse();
 		String invalidUuid = "invalid-uuid";
 		
-		ResponseEntity<byte[]> responseEntity = patientStickerController.getPatientIdSticker(response, invalidUuid, false);
+		ResponseEntity<byte[]> responseEntity = patientStickerController.getPatientIdSticker(response, null, invalidUuid, false);
 		
 		assertNull("Response entity should be null", responseEntity);
 		assertEquals("Should return HTTP 404 status", HttpStatus.NOT_FOUND.value(), response.getStatus());

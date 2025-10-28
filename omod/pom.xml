@@ -143,11 +143,6 @@
 					<include>**/*.xml</include>
 				</includes>
 			</testResource>
-			<testResource>
-				<directory>../omod/src/main/webapp/resources</directory>
-				<targetPath>web/module/resources/</targetPath>
-				<filtering>true</filtering>
-			</testResource>
 		</testResources>
 		<plugins>
 			<plugin>

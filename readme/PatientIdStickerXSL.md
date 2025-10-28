@@ -161,9 +161,12 @@ Key features:
 ### Header Section
 
 The optional header section can contain:
-- An organizational logo on the left (loaded from HTTP URL)
+- An organizational logo on the left (from HTTP(S) URL or from a file path under `OPENMRS_APPLICATION_DATA_DIRECTORY`)
 - Custom header text on the right
-- Automatic logo downloading and caching for HTTP URLs
+- Logo handling behavior:
+  - HTTP(S) logos are downloaded once and cached
+  - Relative paths are resolved under `OPENMRS_APPLICATION_DATA_DIRECTORY`
+  - If none configured or missing, the default OpenMRS logo is loaded from the servlet context and cached under `OPENMRS_APPLICATION_DATA_DIRECTORY`
 
 ### Internationalization Section
 

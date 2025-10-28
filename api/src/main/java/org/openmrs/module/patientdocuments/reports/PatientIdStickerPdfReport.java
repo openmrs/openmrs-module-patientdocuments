@@ -59,15 +59,11 @@ public class PatientIdStickerPdfReport {
 	private InitializerService initializerService;
 	
 	public byte[] generatePdf(Patient patient) throws RuntimeException {
-		return generatePdf(patient, null);
-	}
-	
-	public byte[] generatePdf(Patient patient, byte[] defaultLogoBytes) throws RuntimeException {
 		validatePatientAndPrivileges(patient);
 		
 		try {
 			ReportData reportData = createReportData(patient);
-			byte[] xmlBytes = renderReportToXml(reportData, defaultLogoBytes);
+			byte[] xmlBytes = renderReportToXml(reportData);
 			return transformXmlToPdf(xmlBytes);
 		}
 		catch (Exception e) {
@@ -99,10 +95,10 @@ public class PatientIdStickerPdfReport {
 		return reportData;
 	}
 	
-	private byte[] renderReportToXml(ReportData reportData, byte[] defaultLogoBytes) throws IOException {
+	private byte[] renderReportToXml(ReportData reportData) throws IOException {
 		PatientIdStickerXmlReportRenderer renderer = new PatientIdStickerXmlReportRenderer();
 		try (ByteArrayOutputStream xmlOutputStream = new ByteArrayOutputStream()) {
-			renderer.render(reportData, null, xmlOutputStream, defaultLogoBytes);
+			renderer.render(reportData, null, xmlOutputStream);
 			return xmlOutputStream.toByteArray();
 		}
 	}

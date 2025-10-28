@@ -37,12 +37,17 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.openmrs.util.OpenmrsUtil;
+import java.io.File;
+import java.io.FileOutputStream;
 
 @Controller
 @RequestMapping(value = "/rest/" + RestConstants.VERSION_1 + "/" + MODULE_ARTIFACT_ID + "/" + PATIENT_ID_STICKER_ID)
 public class PatientIdStickerDataPdfExportController extends BaseRestController {
 	
 	private static final Logger logger = LoggerFactory.getLogger(PatientIdStickerDataPdfExportController.class);
+
+	private static final String DEFAULT_LOGO_CLASSPATH = "/images/openmrs_logo_white_large.png";
 	
 	private PatientIdStickerPdfReport pdfReport;
 	
@@ -57,8 +62,9 @@ public class PatientIdStickerDataPdfExportController extends BaseRestController 
 	
 	private ResponseEntity<byte[]> writeResponse(Patient patient, boolean inline, ServletContext servletContext) {
 		try {
-			byte[] defaultLogoBytes = loadDefaultLogo(servletContext);
-			byte[] pdfBytes = pdfReport.generatePdf(patient, defaultLogoBytes);
+			loadAndCacheDefaultLogo(servletContext);
+			
+			byte[] pdfBytes = pdfReport.generatePdf(patient);
 			
 			HttpHeaders headers = new HttpHeaders();
 			headers.set("Content-Type", "application/pdf");
@@ -74,37 +80,33 @@ public class PatientIdStickerDataPdfExportController extends BaseRestController 
 			        .body("Error generating PDF".getBytes());
 		}
 	}
-	
-	private byte[] loadDefaultLogo(ServletContext servletContext) {
-		byte[] logoBytes = null;
-		if (servletContext != null) {
-			try (InputStream logoStream = servletContext.getResourceAsStream("/images/openmrs_logo_white_large.png")) {
-				if (logoStream != null) {
-					logger.info("Logo file found using ServletContext.getResourceAsStream()");
-					
-					// Read the stream into a byte array
-					logoBytes = inputStreamToByteArray(logoStream);
-					if (logoBytes != null) {
-						logger.info("Successfully read " + logoBytes.length + " bytes from logo file");
-					}
-				} else {
-					logger.warn("Logo file not found from default path");
-				}
-			} catch (IOException e) {
-				logger.warn("Error reading logo file: {}", e.getMessage());
+
+	private void loadAndCacheDefaultLogo(ServletContext servletContext) {
+		if (servletContext == null) {
+			return;
+		}
+		
+		try (InputStream logoStream = servletContext.getResourceAsStream(DEFAULT_LOGO_CLASSPATH)) {
+			if (logoStream == null) {
+				logger.warn("Logo file not found at: {}", DEFAULT_LOGO_CLASSPATH);
+				return;
 			}
+			
+			File cacheFile = new File(
+				OpenmrsUtil.getDirectoryInApplicationDataDirectory(""), 
+				"patientdocuments_logo_cache.png"
+			);
+			
+			try (FileOutputStream fos = new FileOutputStream(cacheFile)) {
+				OpenmrsUtil.copyFile(logoStream, fos);
+				logger.info("Successfully cached logo to: {}", cacheFile.getAbsolutePath());
+			}
+			
+		} catch (IOException e) {
+			logger.error("Failed to cache logo from: {}", DEFAULT_LOGO_CLASSPATH, e);
+		} catch (Exception e) {
+			logger.warn("Unable to load and cache default logo", e);
 		}
-		return logoBytes;
-	}
-	
-	private byte[] inputStreamToByteArray(InputStream inputStream) throws IOException {
-		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-		byte[] data = new byte[1024];
-		int bytesRead;
-		while ((bytesRead = inputStream.read(data, 0, data.length)) != -1) {
-			buffer.write(data, 0, bytesRead);
-		}
-		return buffer.toByteArray();
 	}
 	
 	@RequestMapping(method = RequestMethod.GET)

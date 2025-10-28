@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
@@ -68,8 +69,9 @@ public class PatientIdStickerDataPdfExportControllerTest extends BaseModuleWebCo
 	public void getPatientIdSticker_shouldReturnValidPdfForEnglishLocale() throws Exception {
 		Context.setLocale(Locale.ENGLISH);
 		MockHttpServletResponse response = new MockHttpServletResponse();
+		MockHttpServletRequest request = new MockHttpServletRequest();
 		
-		ResponseEntity<byte[]> result = patientStickerController.getPatientIdSticker(response, null, TEST_PATIENT_UUID, false);
+		ResponseEntity<byte[]> result = patientStickerController.getPatientIdSticker(response, request, TEST_PATIENT_UUID, false);
 		byte[] pdfContent = result.getBody();
 		
 		assertNotNull(pdfContent);
@@ -92,8 +94,9 @@ public class PatientIdStickerDataPdfExportControllerTest extends BaseModuleWebCo
 	public void getPatientIdSticker_shouldReturnValidPdfForArabicLocale() throws Exception {
 		Context.setLocale(new Locale("ar", "AR"));
 		MockHttpServletResponse response = new MockHttpServletResponse();
+		MockHttpServletRequest request = new MockHttpServletRequest();
 		
-		ResponseEntity<byte[]> result = patientStickerController.getPatientIdSticker(response, null, TEST_PATIENT_UUID, false);
+		ResponseEntity<byte[]> result = patientStickerController.getPatientIdSticker(response, request, TEST_PATIENT_UUID, false);
 		
 		byte[] pdfContent = result.getBody();
 		assertNotNull(pdfContent);
@@ -114,9 +117,11 @@ public class PatientIdStickerDataPdfExportControllerTest extends BaseModuleWebCo
 	@Test
 	public void getPatientIdSticker_shouldReturn404ForInvalidPatient() throws Exception {
 		MockHttpServletResponse response = new MockHttpServletResponse();
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		
 		String invalidUuid = "invalid-uuid";
 		
-		ResponseEntity<byte[]> responseEntity = patientStickerController.getPatientIdSticker(response, null, invalidUuid, false);
+		ResponseEntity<byte[]> responseEntity = patientStickerController.getPatientIdSticker(response, request, invalidUuid, false);
 		
 		assertNull("Response entity should be null", responseEntity);
 		assertEquals("Should return HTTP 404 status", HttpStatus.NOT_FOUND.value(), response.getStatus());

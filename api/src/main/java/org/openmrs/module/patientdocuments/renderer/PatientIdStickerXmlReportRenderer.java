@@ -216,9 +216,7 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 		Element header = doc.createElement("header");
 		// Handle logo if configured		
 		String logoUrlPath = getInitializerService().getValueFromKey("report.patientIdSticker.logourl");
-		if (isNotBlank(logoUrlPath)) {
-			configureLogo(doc, header, logoUrlPath);
-		}
+		configureLogo(doc, header, logoUrlPath);
 		
 		boolean useHeader = Boolean.TRUE.equals(getInitializerService().getBooleanFromKey("report.patientIdSticker.header"));
 		if (useHeader) {

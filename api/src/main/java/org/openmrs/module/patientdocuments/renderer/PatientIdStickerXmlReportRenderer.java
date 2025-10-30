@@ -17,6 +17,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -272,7 +273,7 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 		
 			// 2. Fall back to cached logo
 			if (isBlank(logoPath) && defaultLogoBytes != null && defaultLogoBytes.length > 0) {
-				String base64Image = java.util.Base64.getEncoder().encodeToString(defaultLogoBytes);
+				String base64Image = Base64.getEncoder().encodeToString(defaultLogoBytes);
 				logoPath = "data:image/png;base64," + base64Image;
 			}
 		} catch (Exception e) {

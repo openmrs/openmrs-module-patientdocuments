@@ -12,7 +12,6 @@ package org.openmrs.module.patientdocuments.web.rest.controller;
 import static org.openmrs.module.patientdocuments.common.PatientDocumentsConstants.PATIENT_ID_STICKER_ID;
 import static org.openmrs.module.patientdocuments.common.PatientDocumentsConstants.MODULE_ARTIFACT_ID;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -20,6 +19,7 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.io.IOUtils;
 import org.openmrs.Patient;
 import org.openmrs.api.PatientService;
 import org.openmrs.module.patientdocuments.reports.PatientIdStickerPdfReport;
@@ -37,9 +37,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.openmrs.util.OpenmrsUtil;
-import java.io.File;
-import java.io.FileOutputStream;
 
 @Controller
 @RequestMapping(value = "/rest/" + RestConstants.VERSION_1 + "/" + MODULE_ARTIFACT_ID + "/" + PATIENT_ID_STICKER_ID)
@@ -48,7 +45,7 @@ public class PatientIdStickerDataPdfExportController extends BaseRestController 
 	private static final Logger logger = LoggerFactory.getLogger(PatientIdStickerDataPdfExportController.class);
 
 	private static final String DEFAULT_LOGO_CLASSPATH = "/images/openmrs_logo_white_large.png";
-	
+		
 	private PatientIdStickerPdfReport pdfReport;
 	
 	private PatientService ps;
@@ -62,9 +59,8 @@ public class PatientIdStickerDataPdfExportController extends BaseRestController 
 	
 	private ResponseEntity<byte[]> writeResponse(Patient patient, boolean inline, ServletContext servletContext) {
 		try {
-			loadAndCacheDefaultLogo(servletContext);
-			
-			byte[] pdfBytes = pdfReport.generatePdf(patient);
+			byte[] defaultLogoBytes =loadAndCacheDefaultLogo(servletContext);
+			byte[] pdfBytes = pdfReport.generatePdf(patient, defaultLogoBytes);
 			
 			HttpHeaders headers = new HttpHeaders();
 			headers.set("Content-Type", "application/pdf");
@@ -81,32 +77,24 @@ public class PatientIdStickerDataPdfExportController extends BaseRestController 
 		}
 	}
 
-	private void loadAndCacheDefaultLogo(ServletContext servletContext) {
+	private byte[] loadAndCacheDefaultLogo(ServletContext servletContext) {
 		if (servletContext == null) {
-			return;
+			return null;
 		}
 		
-		File appDataDir = OpenmrsUtil.getDirectoryInApplicationDataDirectory("");
-		File cachedLogo = new File(appDataDir, "patientdocuments_logo_cache.png");
-		if (cachedLogo.exists() && cachedLogo.canRead()) {
-			return;
-		}
-
 		try (InputStream logoStream = servletContext.getResourceAsStream(DEFAULT_LOGO_CLASSPATH)) {
 			if (logoStream == null) {
 				logger.warn("Logo file not found at: {}", DEFAULT_LOGO_CLASSPATH);
-				return;
+				return null;
 			}
 			
-			try (FileOutputStream fos = new FileOutputStream(cachedLogo)) {
-				OpenmrsUtil.copyFile(logoStream, fos);
-				logger.info("Successfully cached logo to: {}", cachedLogo.getAbsolutePath());
-			}
+			byte[] logoBytes = IOUtils.toByteArray(logoStream);
+			logger.info("Successfully cached logo in memory ({} bytes)", logoBytes.length);
+			return logoBytes;
 			
 		} catch (IOException e) {
-			logger.error("Failed to cache logo from: {}", DEFAULT_LOGO_CLASSPATH, e);
-		} catch (Exception e) {
-			logger.warn("Unable to load and cache default logo", e);
+			logger.error("Failed to load logo from: {}", DEFAULT_LOGO_CLASSPATH, e);
+			return null;
 		}
 	}
 	

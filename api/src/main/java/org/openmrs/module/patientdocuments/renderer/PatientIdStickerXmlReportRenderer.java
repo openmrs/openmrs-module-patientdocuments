@@ -115,6 +115,10 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 	
 	@Override
 	public void render(ReportData results, String argument, OutputStream out) throws IOException, RenderingException {
+		render(results, argument, out, null);
+	}
+
+	public void render(ReportData results, String argument, OutputStream out, byte[] defaultLogoBytes) throws IOException, RenderingException {
 		DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
 		DocumentBuilder docBuilder;
 		try {
@@ -139,7 +143,7 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 		Element templatePIDElement = createStickerTemplate(doc);
 		
 		// Handle header configuration
-		configureHeader(doc, templatePIDElement);
+		configureHeader(doc, templatePIDElement, defaultLogoBytes);
 		
 		// Process data set fields
 		processDataSetFields(results, doc, templatePIDElement);
@@ -212,11 +216,11 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 		return templatePIDElement;
 	}
 	
-	private void configureHeader(Document doc, Element templatePIDElement) {
+	private void configureHeader(Document doc, Element templatePIDElement, byte[] defaultLogoBytes) {
 		Element header = doc.createElement("header");
 		// Handle logo if configured		
 		String logoUrlPath = getInitializerService().getValueFromKey("report.patientIdSticker.logourl");
-		configureLogo(doc, header, logoUrlPath);
+		configureLogo(doc, header, logoUrlPath, defaultLogoBytes);
 		
 		boolean useHeader = Boolean.TRUE.equals(getInitializerService().getBooleanFromKey("report.patientIdSticker.header"));
 		if (useHeader) {
@@ -250,7 +254,7 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 	 * @param logoUrlPath User-configured logo path (can be null, absolute, or relative)
 	 * @throws RenderingException if no valid logo can be found
 	 */
-	private void configureLogo(Document doc, Element header, String logoUrlPath) {
+	private void configureLogo(Document doc, Element header, String logoUrlPath, byte[] defaultLogoBytes) {
 		String logoPath = "";
 
 		try {
@@ -267,12 +271,9 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 			}
 		
 			// 2. Fall back to cached logo
-			if (isBlank(logoPath)) {
-				File appDataDir = OpenmrsUtil.getDirectoryInApplicationDataDirectory("");
-				File cachedLogo = new File(appDataDir, "patientdocuments_logo_cache.png");
-				if (cachedLogo.exists() && cachedLogo.canRead()) {
-					logoPath = cachedLogo.getAbsolutePath();
-				}
+			if (isBlank(logoPath) && defaultLogoBytes != null && defaultLogoBytes.length > 0) {
+				String base64Image = java.util.Base64.getEncoder().encodeToString(defaultLogoBytes);
+				logoPath = "data:image/png;base64," + base64Image;
 			}
 		} catch (Exception e) {
 			throw new RenderingException("Failed to configure logo", e);

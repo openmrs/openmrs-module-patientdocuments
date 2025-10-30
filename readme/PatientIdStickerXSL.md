@@ -165,7 +165,7 @@ The optional header section can contain:
 - Custom header text on the right
 - Logo handling behavior:
   - Relative paths are resolved under `OPENMRS_APPLICATION_DATA_DIRECTORY`
-  - If none configured or missing, the default OpenMRS logo is loaded from the servlet context and cached under `OPENMRS_APPLICATION_DATA_DIRECTORY`
+  - If none configured or missing, the default OpenMRS logo is loaded from the servlet context.
 
 ### Internationalization Section
 
@@ -207,14 +207,13 @@ The stylesheet includes several responsive design elements:
 - **Demographic Grouping**: In MSF layout, groups Gender, DOB, and Age fields in a single row
 - **Secondary Identifier**: Special handling for secondary patient identifiers
 - **Internationalization**: Support for translated field labels and messages
-- **Logo Handling**: Automatic download and caching of logos from HTTP URLs
+- **Logo Handling**: Pulled from the `OPENMRS_APPLICATION_DATA_DIRECTORY` or servlet context for the default OpenMRS logo.
 
 ## Technical Requirements
 
 - **XSL-FO Processor**: Compatible with Apache FOP or similar XSL-FO processors
 - **Barcode4J Library**: Required for barcode generation
 - **Fonts**: Requires IBM Plex Sans Arabic and IBM Plex Sans Arabic Bold (or configured alternatives)
-- **Network Access**: Required for logo downloading from HTTP URLs
 
 ## Examples
 

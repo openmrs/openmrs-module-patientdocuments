@@ -59,7 +59,7 @@ public class PatientIdStickerDataPdfExportController extends BaseRestController 
 	
 	private ResponseEntity<byte[]> writeResponse(Patient patient, boolean inline, ServletContext servletContext) {
 		try {
-			byte[] defaultLogoBytes =loadAndCacheDefaultLogo(servletContext);
+			byte[] defaultLogoBytes =loadDefaultLogo(servletContext);
 			byte[] pdfBytes = pdfReport.generatePdf(patient, defaultLogoBytes);
 			
 			HttpHeaders headers = new HttpHeaders();
@@ -77,7 +77,7 @@ public class PatientIdStickerDataPdfExportController extends BaseRestController 
 		}
 	}
 
-	private byte[] loadAndCacheDefaultLogo(ServletContext servletContext) {
+	private byte[] loadDefaultLogo(ServletContext servletContext) {
 		if (servletContext == null) {
 			return null;
 		}
@@ -89,7 +89,6 @@ public class PatientIdStickerDataPdfExportController extends BaseRestController 
 			}
 			
 			byte[] logoBytes = IOUtils.toByteArray(logoStream);
-			logger.info("Successfully cached logo in memory ({} bytes)", logoBytes.length);
 			return logoBytes;
 			
 		} catch (IOException e) {

@@ -271,7 +271,7 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 				}
 			}
 		
-			// 2. Fall back to cached logo
+			// 2. Fall back to default logo
 			if (isBlank(logoPath) && defaultLogoBytes != null && defaultLogoBytes.length > 0) {
 				String base64Image = Base64.getEncoder().encodeToString(defaultLogoBytes);
 				logoPath = "data:image/png;base64," + base64Image;

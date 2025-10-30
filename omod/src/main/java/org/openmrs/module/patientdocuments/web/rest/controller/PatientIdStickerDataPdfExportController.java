@@ -86,20 +86,21 @@ public class PatientIdStickerDataPdfExportController extends BaseRestController 
 			return;
 		}
 		
+		File appDataDir = OpenmrsUtil.getDirectoryInApplicationDataDirectory("");
+		File cachedLogo = new File(appDataDir, "patientdocuments_logo_cache.png");
+		if (cachedLogo.exists() && cachedLogo.canRead()) {
+			return;
+		}
+
 		try (InputStream logoStream = servletContext.getResourceAsStream(DEFAULT_LOGO_CLASSPATH)) {
 			if (logoStream == null) {
 				logger.warn("Logo file not found at: {}", DEFAULT_LOGO_CLASSPATH);
 				return;
 			}
 			
-			File cacheFile = new File(
-				OpenmrsUtil.getDirectoryInApplicationDataDirectory(""), 
-				"patientdocuments_logo_cache.png"
-			);
-			
-			try (FileOutputStream fos = new FileOutputStream(cacheFile)) {
+			try (FileOutputStream fos = new FileOutputStream(cachedLogo)) {
 				OpenmrsUtil.copyFile(logoStream, fos);
-				logger.info("Successfully cached logo to: {}", cacheFile.getAbsolutePath());
+				logger.info("Successfully cached logo to: {}", cachedLogo.getAbsolutePath());
 			}
 			
 		} catch (IOException e) {

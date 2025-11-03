@@ -87,10 +87,7 @@ public class PatientIdStickerDataPdfExportController extends BaseRestController 
 				logger.warn("Logo file not found at: {}", DEFAULT_LOGO_CLASSPATH);
 				return null;
 			}
-			
-			byte[] logoBytes = IOUtils.toByteArray(logoStream);
-			return logoBytes;
-			
+			return IOUtils.toByteArray(logoStream);
 		} catch (IOException e) {
 			logger.error("Failed to load logo from: {}", DEFAULT_LOGO_CLASSPATH, e);
 			return null;

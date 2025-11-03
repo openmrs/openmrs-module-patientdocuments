@@ -59,7 +59,7 @@ public class PatientIdStickerDataPdfExportController extends BaseRestController 
 	
 	private ResponseEntity<byte[]> writeResponse(Patient patient, boolean inline, ServletContext servletContext) {
 		try {
-			byte[] defaultLogoBytes =loadDefaultLogo(servletContext);
+			byte[] defaultLogoBytes = loadDefaultLogo(servletContext);
 			byte[] pdfBytes = pdfReport.generatePdf(patient, defaultLogoBytes);
 			
 			HttpHeaders headers = new HttpHeaders();

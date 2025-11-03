@@ -95,4 +95,5 @@ The module supports internationalization through message properties. Field label
 - Logo resolution rules:
   - If `report.patientIdSticker.logourl` is a relative path, it is resolved under `OPENMRS_APPLICATION_DATA_DIRECTORY` (e.g., `/openmrs/data/my_custom_logo.png`).
   - If no logo is configured or the configured logo is unavailable, the default OpenMRS logo is loaded from the servlet context.
+  - Supported formats: an absolute filesystem path (for a custom logo) or a base64-encoded data URI (for the default OpenMRS logo), both of which are accepted by the renderer/XSL-FO processor.
 - The barcode is generated from the preferred patient identifier when barcode is enabled.

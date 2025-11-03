@@ -243,18 +243,18 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 		templatePIDElement.appendChild(i18nStrings);
 	}
 	
-	/**
-	 * Configures the logo for the sticker document.
-	 * 
-	 * Logo resolution priority:
-	 * 1. Custom logo from file system (absolute or relative path)
-	 * 2. Default OpenMRS logo from classpath
-	 * 
-	 * @param doc The XML document
-	 * @param header The header element to append the logo to
-	 * @param logoUrlPath User-configured logo path (can be null, absolute, or relative)
-	 * @throws RenderingException if no valid logo can be found
-	 */
+    /**
+     * Configures the logo for the sticker document.
+     * 
+     * Logo resolution priority:
+     * 1. Custom logo from absolute filesystem path resolved under {@code OPENMRS_APPLICATION_DATA_DIRECTORY}
+     * 2. Default OpenMRS logo as base64 data URI
+     * 
+     * @param doc The XML document
+     * @param header The header element to append the logo to
+     * @param logoUrlPath User-configured logo path (can be null, absolute, or relative)
+     * @throws RenderingException if no valid logo can be found
+     */
 	private void configureLogo(Document doc, Element header, String logoUrlPath, byte[] defaultLogoBytes) {
 		String logoPath = "";
 

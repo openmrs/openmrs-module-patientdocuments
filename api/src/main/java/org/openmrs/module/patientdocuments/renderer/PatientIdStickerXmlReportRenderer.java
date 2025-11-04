@@ -280,12 +280,14 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 			throw new RenderingException("Failed to configure logo", e);
 		}
 		
-		// Create and append logo elements
-		Element branding = doc.createElement("branding");
-		Element image = doc.createElement("logo");
-		image.setTextContent(logoPath);
-		branding.appendChild(image);
-		header.appendChild(branding);
+		// Create and append logo elements if valid
+		if (isNotBlank(logoPath)) {
+			Element branding = doc.createElement("branding");
+			Element image = doc.createElement("logo");
+			image.setTextContent(logoPath);
+			branding.appendChild(image);
+			header.appendChild(branding);
+		}
 	}
 	
 	private Map<String, String> createConfigKeyMap() {

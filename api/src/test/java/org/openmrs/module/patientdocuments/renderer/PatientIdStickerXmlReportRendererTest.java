@@ -34,7 +34,7 @@ public class PatientIdStickerXmlReportRendererTest extends BaseModuleContextSens
 	public void generatePdf_shouldThrowWhenPatientIsMissing() throws Exception {
 		Patient badPatient = null;
 		Assertions.assertThrows(IllegalArgumentException.class, () -> {
-			pdfReport.generatePdf(badPatient);
+			pdfReport.generatePdf(badPatient, null);
 		});
 	}
 	

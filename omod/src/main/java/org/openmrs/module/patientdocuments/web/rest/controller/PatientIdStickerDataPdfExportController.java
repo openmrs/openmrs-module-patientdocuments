@@ -12,8 +12,14 @@ package org.openmrs.module.patientdocuments.web.rest.controller;
 import static org.openmrs.module.patientdocuments.common.PatientDocumentsConstants.PATIENT_ID_STICKER_ID;
 import static org.openmrs.module.patientdocuments.common.PatientDocumentsConstants.MODULE_ARTIFACT_ID;
 
-import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.InputStream;
 
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.commons.io.IOUtils;
 import org.openmrs.Patient;
 import org.openmrs.api.PatientService;
 import org.openmrs.module.patientdocuments.reports.PatientIdStickerPdfReport;
@@ -37,7 +43,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class PatientIdStickerDataPdfExportController extends BaseRestController {
 	
 	private static final Logger logger = LoggerFactory.getLogger(PatientIdStickerDataPdfExportController.class);
-	
+
+	private static final String DEFAULT_LOGO_CLASSPATH = "/images/openmrs_logo_white_large.png";
+		
 	private PatientIdStickerPdfReport pdfReport;
 	
 	private PatientService ps;
@@ -49,9 +57,10 @@ public class PatientIdStickerDataPdfExportController extends BaseRestController 
 		this.pdfReport = pdfReport;
 	}
 	
-	private ResponseEntity<byte[]> writeResponse(Patient patient, boolean inline) {
+	private ResponseEntity<byte[]> writeResponse(Patient patient, boolean inline, ServletContext servletContext) {
 		try {
-			byte[] pdfBytes = pdfReport.generatePdf(patient);
+			byte[] defaultLogoBytes = loadDefaultLogo(servletContext);
+			byte[] pdfBytes = pdfReport.generatePdf(patient, defaultLogoBytes);
 			
 			HttpHeaders headers = new HttpHeaders();
 			headers.set("Content-Type", "application/pdf");
@@ -67,9 +76,27 @@ public class PatientIdStickerDataPdfExportController extends BaseRestController 
 			        .body("Error generating PDF".getBytes());
 		}
 	}
+
+	private byte[] loadDefaultLogo(ServletContext servletContext) {
+		if (servletContext == null) {
+			return null;
+		}
+		
+		try (InputStream logoStream = servletContext.getResourceAsStream(DEFAULT_LOGO_CLASSPATH)) {
+			if (logoStream == null) {
+				logger.warn("Logo file not found at: {}", DEFAULT_LOGO_CLASSPATH);
+				return null;
+			}
+			return IOUtils.toByteArray(logoStream);
+		} catch (IOException e) {
+			logger.error("Failed to load logo from: {}", DEFAULT_LOGO_CLASSPATH, e);
+			return null;
+		}
+	}
 	
 	@RequestMapping(method = RequestMethod.GET)
 	public ResponseEntity<byte[]> getPatientIdSticker(HttpServletResponse response,
+	        HttpServletRequest request,
 	        @RequestParam(value = "patientUuid") String patientUuid,
 	        @RequestParam(value = "inline", required = false, defaultValue = "true") boolean inline) {
 		
@@ -79,6 +106,7 @@ public class PatientIdStickerDataPdfExportController extends BaseRestController 
 			return null;
 		}
 		
-		return writeResponse(patient, inline);
+		ServletContext servletContext = request.getSession().getServletContext();
+		return writeResponse(patient, inline, servletContext);
 	}
 }

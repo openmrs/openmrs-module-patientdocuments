@@ -9,6 +9,7 @@
  */
 package org.openmrs.module.patientdocuments.renderer;
 
+import static org.apache.commons.lang.StringUtils.isBlank;
 import static org.apache.commons.lang.StringUtils.isNotBlank;
 import static org.openmrs.module.patientdocuments.reports.PatientIdStickerReportManager.DATASET_KEY_STICKER_FIELDS;
 
@@ -16,6 +17,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +48,7 @@ import org.openmrs.module.reporting.report.ReportRequest;
 import org.openmrs.module.reporting.report.renderer.RenderingException;
 import org.openmrs.module.reporting.report.renderer.ReportDesignRenderer;
 import org.openmrs.module.reporting.report.renderer.ReportRenderer;
+import org.openmrs.util.OpenmrsUtil;
 import org.springframework.stereotype.Component;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -113,6 +116,10 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 	
 	@Override
 	public void render(ReportData results, String argument, OutputStream out) throws IOException, RenderingException {
+		render(results, argument, out, null);
+	}
+
+	public void render(ReportData results, String argument, OutputStream out, byte[] defaultLogoBytes) throws IOException, RenderingException {
 		DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
 		DocumentBuilder docBuilder;
 		try {
@@ -137,7 +144,7 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 		Element templatePIDElement = createStickerTemplate(doc);
 		
 		// Handle header configuration
-		configureHeader(doc, templatePIDElement);
+		configureHeader(doc, templatePIDElement, defaultLogoBytes);
 		
 		// Process data set fields
 		processDataSetFields(results, doc, templatePIDElement);
@@ -210,13 +217,11 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 		return templatePIDElement;
 	}
 	
-	private void configureHeader(Document doc, Element templatePIDElement) {
+	private void configureHeader(Document doc, Element templatePIDElement, byte[] defaultLogoBytes) {
 		Element header = doc.createElement("header");
 		// Handle logo if configured		
 		String logoUrlPath = getInitializerService().getValueFromKey("report.patientIdSticker.logourl");
-		if (isNotBlank(logoUrlPath)) {
-			configureLogo(doc, header, logoUrlPath);
-		}
+		configureLogo(doc, header, logoUrlPath, defaultLogoBytes);
 		
 		boolean useHeader = Boolean.TRUE.equals(getInitializerService().getBooleanFromKey("report.patientIdSticker.header"));
 		if (useHeader) {
@@ -238,22 +243,51 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 		templatePIDElement.appendChild(i18nStrings);
 	}
 	
-	private void configureLogo(Document doc, Element header, String logoUrlPath) {
-		String logoPath;
-		File logoFile = new File(logoUrlPath);
-		boolean isValidFile = logoFile.exists() && logoFile.canRead() && logoFile.isAbsolute();
+    /**
+     * Configures the logo for the sticker document.
+     * 
+     * Logo resolution priority:
+     * 1. Custom logo from absolute filesystem path resolved under {@code OPENMRS_APPLICATION_DATA_DIRECTORY}
+     * 2. Default OpenMRS logo as base64 data URI
+     * 
+     * @param doc The XML document
+     * @param header The header element to append the logo to
+     * @param logoUrlPath User-configured logo path (can be null, absolute, or relative)
+     * @throws RenderingException if no valid logo can be found
+     */
+	private void configureLogo(Document doc, Element header, String logoUrlPath, byte[] defaultLogoBytes) {
+		String logoPath = "";
+
+		try {
+			// 1. Try custom logo
+			if (isNotBlank(logoUrlPath)) {
+				File logoFile = new File(logoUrlPath);
+				if (!logoFile.isAbsolute()) {
+					File appDataDir = OpenmrsUtil.getDirectoryInApplicationDataDirectory("");
+					logoFile = new File(appDataDir, logoUrlPath);
+				}
+				if (logoFile.exists() && logoFile.canRead()) {
+					logoPath = logoFile.getAbsolutePath();
+				}
+			}
 		
-		if (isValidFile) {
-			logoPath = logoFile.getAbsolutePath();
-		} else {
-			throw new RenderingException("Logo file not found or not accessible: " + logoUrlPath);
+			// 2. Fall back to default logo
+			if (isBlank(logoPath) && defaultLogoBytes != null && defaultLogoBytes.length > 0) {
+				String base64Image = Base64.getEncoder().encodeToString(defaultLogoBytes);
+				logoPath = "data:image/png;base64," + base64Image;
+			}
+		} catch (Exception e) {
+			throw new RenderingException("Failed to configure logo", e);
 		}
 		
-		Element branding = doc.createElement("branding");
-		Element image = doc.createElement("logo");
-		image.setTextContent(logoPath);
-		branding.appendChild(image);
-		header.appendChild(branding);
+		// Create and append logo elements if valid
+		if (isNotBlank(logoPath)) {
+			Element branding = doc.createElement("branding");
+			Element image = doc.createElement("logo");
+			image.setTextContent(logoPath);
+			branding.appendChild(image);
+			header.appendChild(branding);
+		}
 	}
 	
 	private Map<String, String> createConfigKeyMap() {
@@ -365,15 +399,16 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 						
 						// Process address
 						if (shouldIncludeColumn("patientdocuments.patientIdSticker.fields.fulladdress")) {
-							Map<String, String> addressData = (Map<String, String>) patientData.get("preferredAddress");
-							if (addressData != null) {
+							List<Map<String, String>> addressData = (List<Map<String, String>>) patientData.get("addresses");
+							if (addressData != null && !addressData.isEmpty()) {
+								Map<String, String> preferredAddress = addressData.get(0);
 								StringBuilder address = new StringBuilder();
-								appendIfNotNull(address, addressData.get("address1"));
-								appendIfNotNull(address, addressData.get("address2"));
-								appendIfNotNull(address, addressData.get("cityVillage"));
-								appendIfNotNull(address, addressData.get("stateProvince"));
-								appendIfNotNull(address, addressData.get("country"));
-								appendIfNotNull(address, addressData.get("postalCode"));
+								appendIfNotNull(address, preferredAddress.get("address1"));
+								appendIfNotNull(address, preferredAddress.get("address2"));
+								appendIfNotNull(address, preferredAddress.get("cityVillage"));
+								appendIfNotNull(address, preferredAddress.get("stateProvince"));
+								appendIfNotNull(address, preferredAddress.get("country"));
+								appendIfNotNull(address, preferredAddress.get("postalCode"));
 								
 								if (address.length() > 0) {
 									addField(doc, fields, addressKey, address.toString().trim());

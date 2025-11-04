@@ -161,9 +161,12 @@ Key features:
 ### Header Section
 
 The optional header section can contain:
-- An organizational logo on the left (loaded from HTTP URL)
+- An organizational logo on the left (from a file path under `OPENMRS_APPLICATION_DATA_DIRECTORY`)
 - Custom header text on the right
-- Automatic logo downloading and caching for HTTP URLs
+- Logo handling behavior:
+  - Relative paths are resolved under `OPENMRS_APPLICATION_DATA_DIRECTORY`
+  - If none configured or missing, the default OpenMRS logo is loaded from the servlet context.
+  - Supported formats: absolute filesystem path (custom logo) or base64 data URI (default logo). The XSL-FO processor can handle both.
 
 ### Internationalization Section
 
@@ -205,14 +208,13 @@ The stylesheet includes several responsive design elements:
 - **Demographic Grouping**: In MSF layout, groups Gender, DOB, and Age fields in a single row
 - **Secondary Identifier**: Special handling for secondary patient identifiers
 - **Internationalization**: Support for translated field labels and messages
-- **Logo Handling**: Automatic download and caching of logos from HTTP URLs
+- **Logo Handling**: Pulled from the `OPENMRS_APPLICATION_DATA_DIRECTORY` or servlet context for the default OpenMRS logo.
 
 ## Technical Requirements
 
 - **XSL-FO Processor**: Compatible with Apache FOP or similar XSL-FO processors
 - **Barcode4J Library**: Required for barcode generation
 - **Fonts**: Requires IBM Plex Sans Arabic and IBM Plex Sans Arabic Bold (or configured alternatives)
-- **Network Access**: Required for logo downloading from HTTP URLs
 
 ## Examples
 
@@ -276,6 +278,6 @@ The stylesheet includes several responsive design elements:
 - Configuration is managed through the Initializer module
 - Field visibility is controlled by boolean configuration properties
 - Secondary identifier type is specified by UUID in configuration
-- Logo URLs must be HTTP URLs starting with "http" to be processed
+- Logo input is either an absolute filesystem path or a base64-encoded data URI (e.g., `data:image/png;base64,...`). Relative paths are resolved under `OPENMRS_APPLICATION_DATA_DIRECTORY`.
 - Barcode generation uses the preferred patient identifier
 - Multiple stickers can be generated based on the `pages` configuration

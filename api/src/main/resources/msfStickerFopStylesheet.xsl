@@ -80,7 +80,7 @@
             <fo:layout-master-set>
                 <fo:simple-page-master master-name="sticker" 
                     page-width="{$sticker-width}" page-height="{$sticker-height}"
-                    margin="1.5mm">
+                    margin="3mm">
                     <fo:region-body margin="0"/>
                 </fo:simple-page-master>
             </fo:layout-master-set>
@@ -227,7 +227,7 @@
                                 <fo:block font-size="{$label-font-size}pt" font-weight="normal" font-family="{$label-font-family}" color="#444444">
                                     <xsl:value-of select="fields/field[@label = $patientIdKey]/@label"/>
                                 </fo:block>
-                                <fo:block font-size="{$title-font-size}pt" font-weight="bold" font-family="{$value-font-family}"  margin-top="0.2mm">
+                                <fo:block font-size="{$title-font-size}pt" font-weight="bold" font-family="{$value-font-family}" margin-top="0.2mm">
                                     <xsl:value-of select="fields/field[@label = $patientIdKey]"/>
                                 </fo:block>
                             </fo:block-container>
@@ -238,7 +238,7 @@
                                 <fo:block font-size="{$label-font-size}pt" font-weight="normal" font-family="{$label-font-family}" color="#444444">
                                     <xsl:value-of select="fields/field[@label = $patientNameKey]/@label"/>
                                 </fo:block>
-                                <fo:block font-size="{$title-font-size}pt" font-weight="bold" font-family="{$value-font-family}"  margin-top="0.2mm">
+                                <fo:block font-size="{$title-font-size}pt" font-weight="bold" font-family="{$value-font-family}" margin-top="0.2mm">
                                     <xsl:value-of select="fields/field[@label = $patientNameKey]"/>
                                 </fo:block>
                             </fo:block-container>
@@ -255,7 +255,7 @@
                                 <fo:block font-size="{$label-font-size}pt" font-weight="normal" font-family="{$label-font-family}" color="#444444">
                                     <xsl:value-of select="@label"/>
                                 </fo:block>
-                                <fo:block font-size="{$title-font-size}pt" font-weight="bold" font-family="{$value-font-family}"  margin-top="0.2mm">
+                                <fo:block font-size="{$title-font-size}pt" font-weight="bold" font-family="{$value-font-family}" margin-top="0.2mm">
                                     <xsl:value-of select="."/>
                                 </fo:block>
                             </fo:block-container>

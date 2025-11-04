@@ -28,7 +28,7 @@ These flags control which patient information is displayed on each sticker.
 | Key                                                           | Type    | Description                                      |
 |---------------------------------------------------------------|---------|--------------------------------------------------|
 | `report.patientIdSticker.stylesheet`                          | String  | XSL stylesheet to use for rendering stickers     |
-| `report.patientIdSticker.logourl`                             | String  | URL of the logo image displayed on the sticker   |
+| `report.patientIdSticker.logourl`                             | String  | Logo path or URL displayed on the sticker (supports a path relative to `OPENMRS_APPLICATION_DATA_DIRECTORY`) |
 | `report.patientIdSticker.header`                              | Boolean | Show a header section on each sticker            |
 | `report.patientIdSticker.barcode`                             | Boolean | Show a barcode section on each sticker           |
 | `report.patientIdSticker.pages`                               | Number  | Number of sticker pages to generate              |
@@ -92,5 +92,8 @@ The module supports internationalization through message properties. Field label
 - The default font family is IBM Plex Sans Arabic for labels and IBM Plex Sans Arabic Bold for values.
 - The secondary identifier type can be configured using `report.patientIdSticker.fields.identifier.secondary.type` if needed.
 - Available stylesheets include `patientIdStickerFopStylesheet.xsl` (default) and `msfStickerFopStylesheet.xsl` for MSF-specific layouts.
-- Logo URLs must be HTTP URLs starting with "http" to be processed.
+- Logo resolution rules:
+  - If `report.patientIdSticker.logourl` is a relative path, it is resolved under `OPENMRS_APPLICATION_DATA_DIRECTORY` (e.g., `/openmrs/data/my_custom_logo.png`).
+  - If no logo is configured or the configured logo is unavailable, the default OpenMRS logo is loaded from the servlet context.
+  - Supported formats: an absolute filesystem path (for a custom logo) or a base64-encoded data URI (for the default OpenMRS logo), both of which are accepted by the renderer/XSL-FO processor.
 - The barcode is generated from the preferred patient identifier when barcode is enabled.

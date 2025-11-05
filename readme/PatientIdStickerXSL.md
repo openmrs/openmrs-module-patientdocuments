@@ -164,9 +164,9 @@ The optional header section can contain:
 - An organizational logo on the left (from a file path under `OPENMRS_APPLICATION_DATA_DIRECTORY`)
 - Custom header text on the right
 - Logo handling behavior:
-  - Relative paths are resolved under `OPENMRS_APPLICATION_DATA_DIRECTORY`
-  - If none configured or missing, the default OpenMRS logo is loaded from the servlet context.
-  - Supported formats: absolute filesystem path (custom logo) or base64 data URI (default logo). The XSL-FO processor can handle both.
+  - Logo path must be relative and is resolved under `OPENMRS_APPLICATION_DATA_DIRECTORY`.
+  - Absolute paths are rejected; path traversal sequences are blocked; non-regular files are ignored.
+  - If none configured or missing, the default OpenMRS logo is loaded from the servlet context and embedded as a base64 data URI. The XSL-FO processor can handle both filesystem paths and data URIs.
 
 ### Internationalization Section
 
@@ -208,7 +208,7 @@ The stylesheet includes several responsive design elements:
 - **Demographic Grouping**: In MSF layout, groups Gender, DOB, and Age fields in a single row
 - **Secondary Identifier**: Special handling for secondary patient identifiers
 - **Internationalization**: Support for translated field labels and messages
-- **Logo Handling**: Pulled from the `OPENMRS_APPLICATION_DATA_DIRECTORY` or servlet context for the default OpenMRS logo.
+- **Logo Handling**: Pulled from `OPENMRS_APPLICATION_DATA_DIRECTORY` via a relative path, or from the servlet context for the default OpenMRS logo. Absolute paths are not allowed.
 
 ## Technical Requirements
 

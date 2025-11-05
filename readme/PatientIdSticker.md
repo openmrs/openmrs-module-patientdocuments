@@ -28,7 +28,7 @@ These flags control which patient information is displayed on each sticker.
 | Key                                                           | Type    | Description                                      |
 |---------------------------------------------------------------|---------|--------------------------------------------------|
 | `report.patientIdSticker.stylesheet`                          | String  | XSL stylesheet to use for rendering stickers     |
-| `report.patientIdSticker.logourl`                             | String  | Logo path or URL displayed on the sticker (supports a path relative to `OPENMRS_APPLICATION_DATA_DIRECTORY`) |
+| `report.patientIdSticker.logourl`                             | String  | Logo path displayed on the sticker (must be a path relative to `OPENMRS_APPLICATION_DATA_DIRECTORY`) |
 | `report.patientIdSticker.header`                              | Boolean | Show a header section on each sticker            |
 | `report.patientIdSticker.barcode`                             | Boolean | Show a barcode section on each sticker           |
 | `report.patientIdSticker.pages`                               | Number  | Number of sticker pages to generate              |
@@ -58,7 +58,7 @@ These flags control which patient information is displayed on each sticker.
     "report.patientIdSticker.fields.gender": "true",
     "report.patientIdSticker.fields.fulladdress": "true",
     "report.patientIdSticker.stylesheet": "patientIdStickerFopStylesheet.xsl",
-    "report.patientIdSticker.logourl": "http://example.com/logo.png",
+    "report.patientIdSticker.logourl": "branding/logo.png",
     "report.patientIdSticker.pages": "10",
     "report.patientIdSticker.header": "true",
     "report.patientIdSticker.barcode": "true",
@@ -93,7 +93,7 @@ The module supports internationalization through message properties. Field label
 - The secondary identifier type can be configured using `report.patientIdSticker.fields.identifier.secondary.type` if needed.
 - Available stylesheets include `patientIdStickerFopStylesheet.xsl` (default) and `msfStickerFopStylesheet.xsl` for MSF-specific layouts.
 - Logo resolution rules:
-  - If `report.patientIdSticker.logourl` is a relative path, it is resolved under `OPENMRS_APPLICATION_DATA_DIRECTORY` (e.g., `/openmrs/data/my_custom_logo.png`).
-  - If no logo is configured or the configured logo is unavailable, the default OpenMRS logo is loaded from the servlet context.
-  - Supported formats: an absolute filesystem path (for a custom logo) or a base64-encoded data URI (for the default OpenMRS logo), both of which are accepted by the renderer/XSL-FO processor.
+  - `report.patientIdSticker.logourl` must be a relative path which is resolved under `OPENMRS_APPLICATION_DATA_DIRECTORY` (e.g., `branding/my_custom_logo.png` resolves to `/openmrs/data/branding/my_custom_logo.png`).
+  - Absolute paths are rejected for security reasons; path traversal sequences (like `../`) are blocked; non-regular files are ignored.
+  - If no logo is configured or the configured logo is unavailable, a default logo (provided by the web layer) is used via a base64 data URI.
 - The barcode is generated from the preferred patient identifier when barcode is enabled.

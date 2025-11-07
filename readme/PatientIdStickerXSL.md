@@ -208,7 +208,7 @@ The stylesheet includes several responsive design elements:
 - **Demographic Grouping**: In MSF layout, groups Gender, DOB, and Age fields in a single row
 - **Secondary Identifier**: Special handling for secondary patient identifiers
 - **Internationalization**: Support for translated field labels and messages
-- **Logo Handling**: Pulled from `OPENMRS_APPLICATION_DATA_DIRECTORY` via a relative path, or from the servlet context for the default OpenMRS logo. Absolute paths are not allowed.
+- **Logo Handling**: Pulled from `OPENMRS_APPLICATION_DATA_DIRECTORY` via a relative path, or from the servlet context for the default OpenMRS logo.
 
 ## Technical Requirements
 

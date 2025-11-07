@@ -164,7 +164,7 @@ The optional header section can contain:
 - An organizational logo on the left (from a file path under `OPENMRS_APPLICATION_DATA_DIRECTORY`)
 - Custom header text on the right
 - Logo handling behavior:
-  - Logo path must be relative and is resolved under `OPENMRS_APPLICATION_DATA_DIRECTORY`.
+  - Logo path is resolved relative to `OPENMRS_APPLICATION_DATA_DIRECTORY`.
   - Absolute paths are rejected; path traversal sequences are blocked; non-regular files are ignored.
   - If none configured or missing, the default OpenMRS logo is loaded from the servlet context.
 

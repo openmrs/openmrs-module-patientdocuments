@@ -166,7 +166,7 @@ The optional header section can contain:
 - Logo handling behavior:
   - Logo path must be relative and is resolved under `OPENMRS_APPLICATION_DATA_DIRECTORY`.
   - Absolute paths are rejected; path traversal sequences are blocked; non-regular files are ignored.
-  - If none configured or missing, the default OpenMRS logo is loaded from the servlet context and embedded as a base64 data URI. The XSL-FO processor can handle both filesystem paths and data URIs.
+  - If none configured or missing, the default OpenMRS logo is loaded from the servlet context.
 
 ### Internationalization Section
 

@@ -94,6 +94,5 @@ The module supports internationalization through message properties. Field label
 - Available stylesheets include `patientIdStickerFopStylesheet.xsl` (default) and `msfStickerFopStylesheet.xsl` for MSF-specific layouts.
 - Logo resolution rules:
   - `report.patientIdSticker.logourl` should be a path relative to the`OPENMRS_APPLICATION_DATA_DIRECTORY` (e.g., `branding/my_custom_logo.png` resolves to `/openmrs/data/branding/my_custom_logo.png`).
-  - Absolute paths are rejected for security reasons; path traversal sequences (like `../`) are blocked; non-regular files are ignored.
   - If no logo is configured or the configured logo is unavailable, a default logo (provided by the web layer) is used via a base64 data URI.
 - The barcode is generated from the preferred patient identifier when barcode is enabled.

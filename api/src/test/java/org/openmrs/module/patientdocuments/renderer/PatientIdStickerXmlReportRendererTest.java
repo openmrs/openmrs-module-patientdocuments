@@ -12,22 +12,77 @@ package org.openmrs.module.patientdocuments.renderer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.openmrs.Patient;
+import org.openmrs.api.APIException;
 import org.openmrs.module.patientdocuments.reports.PatientIdStickerPdfReport;
 import org.openmrs.test.jupiter.BaseModuleContextSensitiveTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.openmrs.module.reporting.report.manager.ReportManagerUtil;
 import org.openmrs.module.patientdocuments.reports.PatientIdStickerReportManager;
 
+import java.io.File;
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 public class PatientIdStickerXmlReportRendererTest extends BaseModuleContextSensitiveTest {
 	
 	@Autowired
 	private PatientIdStickerPdfReport pdfReport;
 	
+	private Path temporaryApplicationDataDirectory;
+	
+	private String originalApplicationDataDirectoryProperty;
+	
 	@BeforeEach
 	public void setup() throws Exception {
 		executeDataSet("org/openmrs/module/patientdocuments/include/patientIdStickerManagerTestDataset.xml");
 		ReportManagerUtil.setupReport(new PatientIdStickerReportManager());
+	}
+	     
+	@BeforeEach
+	public void setupApplicationDataDirectory() throws Exception {
+		originalApplicationDataDirectoryProperty = System.getProperty("OPENMRS_APPLICATION_DATA_DIRECTORY");
+		temporaryApplicationDataDirectory = Files.createTempDirectory("openmrs-appdata-");
+		System.setProperty("OPENMRS_APPLICATION_DATA_DIRECTORY", temporaryApplicationDataDirectory.toFile().getAbsolutePath());
+	}
+	
+	@AfterEach
+	public void tearDownApplicationDataDirectory() throws Exception {
+		if (originalApplicationDataDirectoryProperty != null) {
+			System.setProperty("OPENMRS_APPLICATION_DATA_DIRECTORY", originalApplicationDataDirectoryProperty);
+		} else {
+			System.clearProperty("OPENMRS_APPLICATION_DATA_DIRECTORY");
+		}
+		if (temporaryApplicationDataDirectory != null) {
+			try {
+				Files.walk(temporaryApplicationDataDirectory)
+					.sorted((pathA, pathB) -> pathB.compareTo(pathA))
+					.forEach(pathToDelete -> {
+						try {
+							Files.deleteIfExists(pathToDelete);
+						} catch (Exception ignored) { }
+					});
+			} catch (Exception ignored) { }
+		}
+	}
+	
+	private File invokeResolveSecureLogoPath(String logoPath) throws Exception {
+		PatientIdStickerXmlReportRenderer renderer = new PatientIdStickerXmlReportRenderer();
+		Method resolveMethod = PatientIdStickerXmlReportRenderer.class.getDeclaredMethod("resolveSecureLogoPath", String.class);
+		resolveMethod.setAccessible(true);
+		try {
+			return (File) resolveMethod.invoke(renderer, logoPath);
+		} catch (InvocationTargetException invocationException) {
+			Throwable actualCause = invocationException.getCause();
+			if (actualCause instanceof APIException) {
+				throw (APIException) actualCause;
+			}
+			throw invocationException;
+		}
 	}
 	
 	@Test
@@ -38,4 +93,53 @@ public class PatientIdStickerXmlReportRendererTest extends BaseModuleContextSens
 		});
 	}
 	
+	@Test
+	public void resolveSecureLogoPath_shouldAllowAbsolutePathWithinAppDataDir() throws Exception {
+		Path logoPathInsideAppData = temporaryApplicationDataDirectory.resolve("logos").resolve("logo.png");
+		Files.createDirectories(logoPathInsideAppData.getParent());
+		Files.createFile(logoPathInsideAppData);
+		
+		File resolvedLogoFile = invokeResolveSecureLogoPath(logoPathInsideAppData.toFile().getAbsolutePath());
+		Assertions.assertEquals(logoPathInsideAppData.toFile().getCanonicalPath(), resolvedLogoFile.getCanonicalPath());
+	}
+	
+	@Test
+	public void resolveSecureLogoPath_shouldRejectAbsolutePathOutsideAppDataDir() {
+		Assertions.assertThrows(APIException.class, () -> {
+			Path externalTempDirectory = Files.createTempDirectory("outside-appdata-");
+			try {
+				Path logoPathOutsideAppData = externalTempDirectory.resolve("logo.png");
+				Files.createFile(logoPathOutsideAppData);
+				invokeResolveSecureLogoPath(logoPathOutsideAppData.toFile().getAbsolutePath());
+			} finally {
+				try {
+					Files.walk(externalTempDirectory)
+						.sorted((pathA, pathB) -> pathB.compareTo(pathA))
+						.forEach(pathToDelete -> { 
+							try { 
+								Files.deleteIfExists(pathToDelete); 
+							} catch (Exception ignored) { } 
+						});
+				} catch (Exception ignored) { }
+			}
+		});
+	}
+	
+	@Test
+	public void resolveSecureLogoPath_shouldResolveRelativePathWithinAppDataDir() throws Exception {
+		String relativeLogoPath = "images/logo.png";
+		Path expectedLogoPath = temporaryApplicationDataDirectory.resolve(Paths.get(relativeLogoPath));
+		Files.createDirectories(expectedLogoPath.getParent());
+		Files.createFile(expectedLogoPath);
+		
+		File resolvedLogoFile = invokeResolveSecureLogoPath(relativeLogoPath);
+		Assertions.assertEquals(expectedLogoPath.toFile().getCanonicalPath(), resolvedLogoFile.getCanonicalPath());
+	}
+	
+	@Test
+	public void resolveSecureLogoPath_shouldRejectRelativePathTraversal() {
+		Assertions.assertThrows(APIException.class, () -> {
+			invokeResolveSecureLogoPath("../logo.png");
+		});
+	}
 }

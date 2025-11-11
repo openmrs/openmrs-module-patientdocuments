@@ -16,6 +16,9 @@ import static org.openmrs.module.patientdocuments.reports.PatientIdStickerReport
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
@@ -35,6 +38,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.openmrs.annotation.Handler;
+import org.openmrs.api.APIException;
 import org.openmrs.api.context.Context;
 import org.openmrs.messagesource.MessageSourceService;
 import org.openmrs.module.initializer.api.InitializerService;
@@ -248,17 +252,11 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 	}
 	
 	/**
-	 * Configures the logo for the sticker document with security safeguards.
+	 * Configures the logo for the sticker document.
 	 * 
 	 * Logo resolution priority:
 	 * 1. Custom logo from path resolved under {@code OPENMRS_APPLICATION_DATA_DIRECTORY}
 	 * 2. Default OpenMRS logo as base64 data URI
-	 * 
-	 * Security measures:
-	 * - All paths are restricted to the application data directory
-	 * - Path traversal attempts (../) are blocked
-	 * - Symbolic links are not followed
-	 * - Only readable files are accepted
 	 * 
 	 * @param doc The XML document
 	 * @param header The header element to append the logo to
@@ -270,11 +268,12 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 		String logoContent = null;
 
 		try {
+			// 1. Try custom logo
 			if (isNotBlank(logoUrlPath)) {
 				File logoFile = resolveSecureLogoPath(logoUrlPath);
 				if (logoFile != null && logoFile.exists() && logoFile.canRead() && logoFile.isFile()) {
 					logoContent = logoFile.getAbsolutePath();
-				} else if (isNotBlank(logoUrlPath)) {
+				} else {
 					log.warn("Logo file not found, unreadable, or not a regular file: {}", logoUrlPath);
 				}
 			}
@@ -305,53 +304,65 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 	 * 
 	 * @param logoUrlPath The user-provided logo path (must be relative)
 	 * @return A File object if the path is valid and secure, null otherwise
-	 * @throws SecurityException if path traversal or other security violation is detected
+	 * @throws APIException if path traversal or other security violation is detected
 	 */
-	private File resolveSecureLogoPath(String logoUrlPath) throws SecurityException {
+	private File resolveSecureLogoPath(String logoUrlPath) throws APIException {
 		if (isBlank(logoUrlPath)) {
 			return null;
 		}
-
+		
 		final File appDataDir = OpenmrsUtil.getApplicationDataDirectoryAsFile();
 		if (appDataDir == null) {
 			log.error("Application data directory is not configured");
 			return null;
 		}
-
+		
 		try {
-			final String appDataCanonical = appDataDir.getCanonicalPath();
-
-			// Reject absolute paths early
-			final File rawPath = new File(logoUrlPath);
-			if (rawPath.isAbsolute()) {
-				throw new SecurityException("Absolute paths are not allowed for logo files: " + logoUrlPath);
+			final Path appDataPath = appDataDir.toPath().toRealPath();
+			final Path logoPath = Paths.get(logoUrlPath);
+			
+			// For absolute paths, verify they're within app data directory
+			if (logoPath.isAbsolute()) {
+				final Path logoRealPath = logoPath.toRealPath();
+				if (!isPathWithinAppDataDirectory(logoRealPath, appDataPath)) {
+					throw new APIException(
+						"Absolute path must be within application data directory: " + logoUrlPath);
+				}
+				return logoRealPath.toFile();
 			}
-
-			// Detect traversal and suspicious characters in provided path
-			if (logoUrlPath.contains("..") || logoUrlPath.contains("./") || logoUrlPath.contains(".\\")) {
-				throw new SecurityException("Path traversal detected in logo path: " + logoUrlPath);
+			
+			// For relative paths, detect path traversal by comparing absolute and normalized paths
+			final Path logoAbsolutePath = logoPath.toAbsolutePath();
+			final Path logoNormalizedPath = logoAbsolutePath.normalize();
+			
+			if (!logoAbsolutePath.equals(logoNormalizedPath)) {
+				throw new APIException("Path traversal detected in logo path: " + logoUrlPath);
 			}
-			if (logoUrlPath.matches(".*[<>:\"|?*].*")) {
-				throw new SecurityException("Invalid characters in logo path: " + logoUrlPath);
+			
+			// Resolve against application data directory and validate real location
+			final Path resolved = appDataPath.resolve(logoUrlPath).normalize();
+			final Path resolvedReal = resolved.toRealPath();
+			
+			if (!isPathWithinAppDataDirectory(resolvedReal, appDataPath)) {
+				throw new APIException("Logo path escapes application data directory: " + logoUrlPath);
 			}
-
-			// Resolve against application data directory and validate canonical location
-			final File resolved = new File(appDataDir, logoUrlPath);
-			final String resolvedCanonical = resolved.getCanonicalPath();
-			if (!resolvedCanonical.startsWith(appDataCanonical)) {
-				throw new SecurityException("Logo path escapes application data directory: " + logoUrlPath);
-			}
-
+			
 			// Warn on potential symlink, but allow if still within app data directory
-			if (!resolved.getAbsolutePath().equals(resolvedCanonical)) {
+			if (!resolved.equals(resolvedReal)) {
 				log.warn("Potential symbolic link detected for logo: {}", logoUrlPath);
 			}
-
-			return resolved;
+			
+			return resolvedReal.toFile();
+		} catch (InvalidPathException e) {
+			throw new APIException("Invalid characters in logo path: " + logoUrlPath, e);
 		} catch (IOException e) {
 			log.error("Failed to resolve logo path: {}", logoUrlPath, e);
 			return null;
 		}
+	}
+
+	private boolean isPathWithinAppDataDirectory(Path path, Path appDataPath) {
+		return path.startsWith(appDataPath);
 	}
 	
 	private Map<String, String> createConfigKeyMap() {

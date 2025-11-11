@@ -325,8 +325,7 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 			if (logoPath.isAbsolute()) {
 				final Path logoRealPath = logoPath.toRealPath();
 				if (!isPathWithinAppDataDirectory(logoRealPath, appDataPath)) {
-					throw new APIException(
-						"Absolute path must be within application data directory: " + logoUrlPath);
+					throw new APIException("Absolute path must be within application data directory: " + logoUrlPath);
 				}
 				return logoRealPath.toFile();
 			}
@@ -340,19 +339,14 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 			}
 			
 			// Resolve against application data directory and validate real location
-			final Path resolved = appDataPath.resolve(logoUrlPath).normalize();
-			final Path resolvedReal = resolved.toRealPath();
+			final Path resolvedLogoPath = appDataPath.resolve(logoUrlPath).normalize();
+			final Path resolvedLogoRealPath = resolvedLogoPath.toRealPath();
 			
-			if (!isPathWithinAppDataDirectory(resolvedReal, appDataPath)) {
+			if (!isPathWithinAppDataDirectory(resolvedLogoRealPath, appDataPath)) {
 				throw new APIException("Logo path escapes application data directory: " + logoUrlPath);
 			}
 			
-			// Warn on potential symlink, but allow if still within app data directory
-			if (!resolved.equals(resolvedReal)) {
-				log.warn("Potential symbolic link detected for logo: {}", logoUrlPath);
-			}
-			
-			return resolvedReal.toFile();
+			return resolvedLogoRealPath.toFile();
 		} catch (InvalidPathException e) {
 			throw new APIException("Invalid characters in logo path: " + logoUrlPath, e);
 		} catch (IOException e) {

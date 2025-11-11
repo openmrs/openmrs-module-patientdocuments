@@ -16,7 +16,6 @@ import static org.openmrs.module.patientdocuments.reports.PatientIdStickerReport
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -347,7 +346,7 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 			}
 			
 			return resolvedLogoRealPath.toFile();
-		} catch (InvalidPathException e) {
+		} catch (IllegalArgumentException e) {
 			throw new APIException("Invalid characters in logo path: " + logoUrlPath, e);
 		} catch (IOException e) {
 			log.error("Failed to resolve logo path: {}", logoUrlPath, e);

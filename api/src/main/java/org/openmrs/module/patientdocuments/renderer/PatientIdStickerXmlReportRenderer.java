@@ -277,7 +277,7 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 					log.warn("Logo file not found, unreadable, or not a regular file: {}", logoUrlPath);
 				}
 			}
-		} catch (SecurityException e) {
+		} catch (APIException e) {
 			log.error("Security violation when resolving logo path: {}", logoUrlPath, e);
 		}
 

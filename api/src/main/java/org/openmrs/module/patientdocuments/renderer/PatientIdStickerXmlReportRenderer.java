@@ -261,29 +261,15 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 	 * @param header The header element to append the logo to
 	 * @param logoUrlPath User-configured logo path (must be relative to app data dir)
 	 * @param defaultLogoBytes Default logo bytes to use as fallback
-	 * @throws RenderingException if path traversal is detected or other security violation occurs
 	 */
 	private void configureLogo(Document doc, Element header, String logoUrlPath, byte[] defaultLogoBytes) {
 		String logoContent = null;
 
-		try {
-			// 1. Try custom logo
-			if (isNotBlank(logoUrlPath)) {
-				File logoFile = resolveSecureLogoPath(logoUrlPath);
-				if (logoFile != null && logoFile.exists() && logoFile.canRead() && logoFile.isFile()) {
-					logoContent = logoFile.getAbsolutePath();
-				} else {
-					log.warn("Logo file not found, unreadable, or not a regular file: {}", logoUrlPath);
-				}
-			}
-		} catch (APIException e) {
-			String message = e.getMessage();
-			Boolean isSecurityError = message != null
-					&& (message.contains("traversal") || message.contains("must be within"));
-			if (isSecurityError) {
-				log.error("Security violation when resolving logo path: {}", logoUrlPath, e);
-			} else {
-				log.error("Invalid logo path provided: {}", logoUrlPath, e);
+		// 1. Try custom logo
+		if (isNotBlank(logoUrlPath)) {
+			File logoFile = resolveSecureLogoPath(logoUrlPath);
+			if (logoFile != null && logoFile.exists() && logoFile.canRead() && logoFile.isFile()) {
+				logoContent = logoFile.getAbsolutePath();
 			}
 		}
 
@@ -301,7 +287,7 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 		}
 		else if (isNotBlank(logoUrlPath)) {
 			// If a path was provided but we could not resolve or fall back, surface an error
-			throw new RenderingException("Failed to configure logo: unresolved path '" + logoUrlPath + "' and no default provided");
+			log.error("Failed to configure logo: unresolved path '" + logoUrlPath + "' and no default provided");
 		}
 	}
 
@@ -312,7 +298,7 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 	 * @return A File object if the path is valid and secure, null otherwise
 	 * @throws APIException if path traversal or other security violation is detected
 	 */
-	private File resolveSecureLogoPath(String logoUrlPath) throws APIException {
+	private File resolveSecureLogoPath(String logoUrlPath) {
 		if (isBlank(logoUrlPath)) {
 			return null;
 		}
@@ -331,7 +317,7 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 			if (logoPath.isAbsolute()) {
 				final Path logoRealPath = logoPath.toRealPath();
 				if (!isPathWithinAppDataDirectory(logoRealPath, appDataPath)) {
-					throw new APIException("Absolute path must be within application data directory: " + logoUrlPath);
+					log.error("Absolute path must be within application data directory: " + logoUrlPath);
 				}
 				return logoRealPath.toFile();
 			}
@@ -341,7 +327,7 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 			final Path logoNormalizedPath = logoAbsolutePath.normalize();
 			
 			if (!logoAbsolutePath.equals(logoNormalizedPath)) {
-				throw new APIException("Path traversal detected in logo path: " + logoUrlPath);
+				log.error("Path traversal detected in logo path: " + logoUrlPath);
 			}
 			
 			// Resolve against application data directory and validate real location
@@ -349,14 +335,15 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 			final Path resolvedLogoRealPath = resolvedLogoPath.toRealPath();
 			
 			if (!isPathWithinAppDataDirectory(resolvedLogoRealPath, appDataPath)) {
-				throw new APIException("Logo path must be within application data directory: " + logoUrlPath);
+				log.error("Logo path escapes application data directory: " + logoUrlPath);
 			}
 			
 			return resolvedLogoRealPath.toFile();
 		} catch (IllegalArgumentException e) {
-			throw new APIException("Invalid logo path: " + logoUrlPath, e);
+			log.error("Invalid logo path: " + logoUrlPath, e);
+			return null;
 		} catch (IOException e) {
-			log.error("Failed to resolve logo path: {}", logoUrlPath, e);
+			log.error("Failed to access logo file: {}", logoUrlPath, e);
 			return null;
 		}
 	}

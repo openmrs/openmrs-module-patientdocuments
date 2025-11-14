@@ -277,7 +277,14 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 				}
 			}
 		} catch (APIException e) {
-			log.error("Security violation when resolving logo path: {}", logoUrlPath, e);
+			String message = e.getMessage();
+			Boolean isSecurityError = message != null
+					&& (message.contains("traversal") || message.contains("must be within"));
+			if (isSecurityError) {
+				log.error("Security violation when resolving logo path: {}", logoUrlPath, e);
+			} else {
+				log.error("Invalid logo path provided: {}", logoUrlPath, e);
+			}
 		}
 
 		if (isBlank(logoContent) && defaultLogoBytes != null && defaultLogoBytes.length > 0) {
@@ -294,7 +301,7 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 		}
 		else if (isNotBlank(logoUrlPath)) {
 			// If a path was provided but we could not resolve or fall back, surface an error
-			throw new RenderingException("Failed to configure logo: unresolved path and no default provided");
+			throw new RenderingException("Failed to configure logo: unresolved path '" + logoUrlPath + "' and no default provided");
 		}
 	}
 
@@ -342,12 +349,12 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 			final Path resolvedLogoRealPath = resolvedLogoPath.toRealPath();
 			
 			if (!isPathWithinAppDataDirectory(resolvedLogoRealPath, appDataPath)) {
-				throw new APIException("Logo path escapes application data directory: " + logoUrlPath);
+				throw new APIException("Logo path must be within application data directory: " + logoUrlPath);
 			}
 			
 			return resolvedLogoRealPath.toFile();
 		} catch (IllegalArgumentException e) {
-			throw new APIException("Invalid characters in logo path: " + logoUrlPath, e);
+			throw new APIException("Invalid logo path: " + logoUrlPath, e);
 		} catch (IOException e) {
 			log.error("Failed to resolve logo path: {}", logoUrlPath, e);
 			return null;

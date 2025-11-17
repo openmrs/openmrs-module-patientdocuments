@@ -93,6 +93,6 @@ The module supports internationalization through message properties. Field label
 - The secondary identifier type can be configured using `report.patientIdSticker.fields.identifier.secondary.type` if needed.
 - Available stylesheets include `patientIdStickerFopStylesheet.xsl` (default) and `msfStickerFopStylesheet.xsl` for MSF-specific layouts.
 - Logo resolution rules:
-  - `report.patientIdSticker.logourl` should be a path relative to the`OPENMRS_APPLICATION_DATA_DIRECTORY` (e.g., `branding/my_custom_logo.png` resolves to `/openmrs/data/branding/my_custom_logo.png`).
+  - `report.patientIdSticker.logourl` should be a path relative to the`OPENMRS_APPLICATION_DATA_DIRECTORY` (e.g., `branding/my_custom_logo.png`).
   - If no logo is configured or the configured logo is unavailable, a default logo (provided by the web layer) is used via a base64 data URI.
 - The barcode is generated from the preferred patient identifier when barcode is enabled.

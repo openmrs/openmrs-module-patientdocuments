@@ -305,7 +305,7 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 		
 		final File appDataDir = OpenmrsUtil.getApplicationDataDirectoryAsFile();
 		if (appDataDir == null) {
-			log.error("Application data directory is not configured");
+			log.error("Application data directory could not be found");
 			return null;
 		}
 		

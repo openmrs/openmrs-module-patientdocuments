@@ -28,7 +28,7 @@ These flags control which patient information is displayed on each sticker.
 | Key                                                           | Type    | Description                                      |
 |---------------------------------------------------------------|---------|--------------------------------------------------|
 | `report.patientIdSticker.stylesheet`                          | String  | XSL stylesheet to use for rendering stickers     |
-| `report.patientIdSticker.logourl`                             | String  | Logo path displayed on the sticker (must be a path relative to `OPENMRS_APPLICATION_DATA_DIRECTORY`) |
+| `report.patientIdSticker.logourl`                             | String  | Logo path displayed on the sticker (must be a path relative to the OpenMRS application data directory) |
 | `report.patientIdSticker.header`                              | Boolean | Show a header section on each sticker            |
 | `report.patientIdSticker.barcode`                             | Boolean | Show a barcode section on each sticker           |
 | `report.patientIdSticker.pages`                               | Number  | Number of sticker pages to generate              |

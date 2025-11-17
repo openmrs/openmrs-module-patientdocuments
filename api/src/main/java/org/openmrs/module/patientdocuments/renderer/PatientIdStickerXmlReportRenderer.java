@@ -292,7 +292,7 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 	}
 
 	/**
-	 * Securely resolves a logo path, ensuring it stays within the application data directory.
+	 * Ensure that the  supplied {@code logoUrlPath} refers to a file in the application data directory
 	 * 
 	 * @param logoUrlPath The user-provided logo path (must be relative)
 	 * @return A File object if the path is valid and secure, null otherwise

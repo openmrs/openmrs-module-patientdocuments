@@ -287,7 +287,7 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 		}
 		else if (isNotBlank(logoUrlPath)) {
 			// If a path was provided but we could not resolve or fall back, surface an error
-			log.error("Failed to configure logo: unresolved path '" + logoUrlPath + "' and no default provided");
+			log.error("Failed to configure logo: unresolved path '{}' and no default provided", logoUrlPath);
 		}
 	}
 

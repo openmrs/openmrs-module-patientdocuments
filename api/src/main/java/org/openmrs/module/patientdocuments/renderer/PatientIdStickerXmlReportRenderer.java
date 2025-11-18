@@ -16,6 +16,7 @@ import static org.openmrs.module.patientdocuments.reports.PatientIdStickerReport
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -37,7 +38,6 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.openmrs.annotation.Handler;
-import org.openmrs.api.APIException;
 import org.openmrs.api.context.Context;
 import org.openmrs.messagesource.MessageSourceService;
 import org.openmrs.module.initializer.api.InitializerService;
@@ -51,6 +51,7 @@ import org.openmrs.module.reporting.report.ReportRequest;
 import org.openmrs.module.reporting.report.renderer.RenderingException;
 import org.openmrs.module.reporting.report.renderer.ReportDesignRenderer;
 import org.openmrs.module.reporting.report.renderer.ReportRenderer;
+import org.openmrs.util.OpenmrsClassLoader;
 import org.openmrs.util.OpenmrsUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,6 +60,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.io.IOUtils;
 
 /**
  * ReportRenderer that renders to a default XML format
@@ -69,6 +71,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 	
 	private static final Logger log = LoggerFactory.getLogger(PatientIdStickerXmlReportRenderer.class);
+
+	private static final String DEFAULT_LOGO_CLASSPATH = "web/module/resources/openmrs_logo_white_large.png";
 	
 	private MessageSourceService mss;
 	
@@ -123,10 +127,6 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 	
 	@Override
 	public void render(ReportData results, String argument, OutputStream out) throws IOException, RenderingException {
-		render(results, argument, out, null);
-	}
-
-	public void render(ReportData results, String argument, OutputStream out, byte[] defaultLogoBytes) throws IOException, RenderingException {
 		DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
 		DocumentBuilder docBuilder;
 		try {
@@ -151,7 +151,7 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 		Element templatePIDElement = createStickerTemplate(doc);
 		
 		// Handle header configuration
-		configureHeader(doc, templatePIDElement, defaultLogoBytes);
+		configureHeader(doc, templatePIDElement);
 		
 		// Process data set fields
 		processDataSetFields(results, doc, templatePIDElement);
@@ -224,11 +224,11 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 		return templatePIDElement;
 	}
 	
-	private void configureHeader(Document doc, Element templatePIDElement, byte[] defaultLogoBytes) {
+	private void configureHeader(Document doc, Element templatePIDElement) {
 		Element header = doc.createElement("header");
-		// Handle logo if configured		
+		// Handle logo if configured
 		String logoUrlPath = getInitializerService().getValueFromKey("report.patientIdSticker.logourl");
-		configureLogo(doc, header, logoUrlPath, defaultLogoBytes);
+		configureLogo(doc, header, logoUrlPath);
 		
 		boolean useHeader = Boolean.TRUE.equals(getInitializerService().getBooleanFromKey("report.patientIdSticker.header"));
 		if (useHeader) {
@@ -253,29 +253,38 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 	/**
 	 * Configures the logo for the sticker document.
 	 * 
-	 * Logo resolution priority:
-	 * 1. Custom logo from path resolved under {@code OPENMRS_APPLICATION_DATA_DIRECTORY}
-	 * 2. Default OpenMRS logo as base64 data URI
+	 * Loads a custom logo from {@code logoUrlPath} (absolute or relative to the {@code OPENMRS_APPLICATION_DATA_DIRECTORY}.
+	 * If not found, falls back to the OpenMRS logo from the classpath.
 	 * 
 	 * @param doc The XML document
 	 * @param header The header element to append the logo to
 	 * @param logoUrlPath User-configured logo path (must be relative to app data dir)
-	 * @param defaultLogoBytes Default logo bytes to use as fallback
 	 */
-	private void configureLogo(Document doc, Element header, String logoUrlPath, byte[] defaultLogoBytes) {
+	private void configureLogo(Document doc, Element header, String logoUrlPath) {
 		String logoContent = null;
 
 		// 1. Try custom logo
 		if (isNotBlank(logoUrlPath)) {
 			File logoFile = resolveSecureLogoPath(logoUrlPath);
 			if (logoFile != null && logoFile.exists() && logoFile.canRead() && logoFile.isFile()) {
-				logoContent = logoFile.getAbsolutePath();
+				try {
+					byte[] customLogoBytes = OpenmrsUtil.getFileAsBytes(logoFile);
+					if (customLogoBytes != null && customLogoBytes.length > 0) {
+						String base64Image = Base64.getEncoder().encodeToString(customLogoBytes);
+						logoContent = "data:image/png;base64," + base64Image;
+					}
+				} catch (IOException e) {
+					log.error("Failed to load custom logo from file: {}", logoFile.getAbsolutePath(), e);
+				}
 			}
 		}
 
-		if (isBlank(logoContent) && defaultLogoBytes != null && defaultLogoBytes.length > 0) {
-			String base64Image = Base64.getEncoder().encodeToString(defaultLogoBytes);
-			logoContent = "data:image/png;base64," + base64Image;
+		if (isBlank(logoContent)) {
+			byte[] defaultLogoBytes = loadDefaultLogoFromClasspath();
+			if (defaultLogoBytes != null && defaultLogoBytes.length > 0) {
+				String base64Image = Base64.getEncoder().encodeToString(defaultLogoBytes);
+				logoContent = "data:image/png;base64," + base64Image;
+			}
 		}
 
 		if (isNotBlank(logoContent)) {
@@ -291,14 +300,27 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 		}
 	}
 
+	private byte[] loadDefaultLogoFromClasspath() {
+		try (InputStream logoStream = OpenmrsClassLoader.getInstance().getResourceAsStream(DEFAULT_LOGO_CLASSPATH)) {
+			if (logoStream == null) {
+				log.warn("Default logo not found on classpath at: {}", DEFAULT_LOGO_CLASSPATH);
+				return null;
+			}
+			return IOUtils.toByteArray(logoStream);
+		}
+		catch (IOException e) {
+			log.error("Failed to load default logo from classpath at: {}", DEFAULT_LOGO_CLASSPATH, e);
+			return null;
+		}
+	}
+
 	/**
 	 * Ensure that the  supplied {@code logoUrlPath} refers to a file in the application data directory
 	 * 
 	 * @param logoUrlPath The user-provided logo path
-	 * @return A File object pointing to the logo if the path is valid otherwise null
-	 * @throws APIException if path traversal or other security violation is detected
+	 * @return A File object pointing to the logo if the path is valid, otherwise {@code null}
 	 */
-	private File resolveSecureLogoPath(String logoUrlPath) {
+	protected File resolveSecureLogoPath(String logoUrlPath) {
 		if (isBlank(logoUrlPath)) {
 			return null;
 		}
@@ -317,7 +339,8 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 			if (logoPath.isAbsolute()) {
 				final Path logoRealPath = logoPath.toRealPath();
 				if (!isPathWithinAppDataDirectory(logoRealPath, appDataPath)) {
-					log.error("Absolute path must be within application data directory: " + logoUrlPath);
+					log.error("Absolute path must be within application data directory: {}", logoUrlPath);
+					return null;
 				}
 				return logoRealPath.toFile();
 			}
@@ -327,7 +350,8 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 			final Path logoNormalizedPath = logoAbsolutePath.normalize();
 			
 			if (!logoAbsolutePath.equals(logoNormalizedPath)) {
-				log.error("Path traversal detected in logo path: " + logoUrlPath);
+				log.error("Path traversal detected in logo path: {}", logoUrlPath);
+				return null;
 			}
 			
 			// Resolve against application data directory and validate real location
@@ -335,7 +359,8 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 			final Path resolvedLogoRealPath = resolvedLogoPath.toRealPath();
 			
 			if (!isPathWithinAppDataDirectory(resolvedLogoRealPath, appDataPath)) {
-				log.error("Logo path escapes application data directory: " + logoUrlPath);
+				log.error("Logo path escapes application data directory: {}", logoUrlPath);
+				return null;
 			}
 			
 			return resolvedLogoRealPath.toFile();

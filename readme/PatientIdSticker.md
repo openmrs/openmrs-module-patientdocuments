@@ -28,7 +28,7 @@ These flags control which patient information is displayed on each sticker.
 | Key                                                           | Type    | Description                                      |
 |---------------------------------------------------------------|---------|--------------------------------------------------|
 | `report.patientIdSticker.stylesheet`                          | String  | XSL stylesheet to use for rendering stickers     |
-| `report.patientIdSticker.logourl`                             | String  | Logo path displayed on the sticker (must be a path relative to the OpenMRS application data directory) |
+| `report.patientIdSticker.logourl`                             | String  | Logo path displayed on the sticker (both relative and absolute paths are supported, but absolute paths must be within the application data directory.) |
 | `report.patientIdSticker.header`                              | Boolean | Show a header section on each sticker            |
 | `report.patientIdSticker.barcode`                             | Boolean | Show a barcode section on each sticker           |
 | `report.patientIdSticker.pages`                               | Number  | Number of sticker pages to generate              |
@@ -94,5 +94,5 @@ The module supports internationalization through message properties. Field label
 - Available stylesheets include `patientIdStickerFopStylesheet.xsl` (default) and `msfStickerFopStylesheet.xsl` for MSF-specific layouts.
 - Logo resolution rules:
   - `report.patientIdSticker.logourl` should be a path relative to the`OPENMRS_APPLICATION_DATA_DIRECTORY` (e.g., `branding/my_custom_logo.png`).
-  - If no logo is configured or the configured logo is unavailable, the OpenMRS logo will be used as a default (requires the legacyui module).
+  - If no logo is configured or the configured logo is unavailable, the OpenMRS logo will be used as a default.
 - The barcode is generated from the preferred patient identifier when barcode is enabled.

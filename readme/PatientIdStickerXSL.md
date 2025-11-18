@@ -165,8 +165,8 @@ The optional header section can contain:
 - Custom header text on the right
 - Logo handling behavior:
   - Logo path is resolved relative to `OPENMRS_APPLICATION_DATA_DIRECTORY`.
-  - Absolute paths are rejected; path traversal sequences are blocked; non-regular files are ignored.
-  - If none configured or missing, the default OpenMRS logo is loaded from the servlet context.
+  - If none configured or missing, the default OpenMRS logo is loaded from the classpath
+  - Supported formats: PNG only.
 
 ### Internationalization Section
 
@@ -278,6 +278,6 @@ The stylesheet includes several responsive design elements:
 - Configuration is managed through the Initializer module
 - Field visibility is controlled by boolean configuration properties
 - Secondary identifier type is specified by UUID in configuration
-- Logo input is either an absolute filesystem path or a base64-encoded data URI (e.g., `data:image/png;base64,...`). Relative paths are resolved under `OPENMRS_APPLICATION_DATA_DIRECTORY`.
+- Logo input is an absolute or relative filesystem path resolved under `OPENMRS_APPLICATION_DATA_DIRECTORY`.
 - Barcode generation uses the preferred patient identifier
 - Multiple stickers can be generated based on the `pages` configuration

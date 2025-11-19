@@ -350,7 +350,7 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 			final Path resolvedLogoRealPath = resolvedLogoPath.toRealPath();
 			
 			if (!isPathWithinAppDataDirectory(resolvedLogoRealPath, appDataPath)) {
-				log.error("Logo path escapes application data directory: {}", logoUrlPath);
+				log.error("Logo path must be within the application data directory: {}", logoUrlPath);
 				return null;
 			}
 			

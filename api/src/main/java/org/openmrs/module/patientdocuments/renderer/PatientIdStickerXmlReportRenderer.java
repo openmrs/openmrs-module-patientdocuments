@@ -253,7 +253,7 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 	/**
 	 * Configures the logo for the sticker document.
 	 * 
-	 * Loads a custom logo from {@code logoUrlPath} (absolute or relative to the {@code OPENMRS_APPLICATION_DATA_DIRECTORY}.
+	 * Loads a custom logo from {@code logoUrlPath} (relative to the {@code OPENMRS_APPLICATION_DATA_DIRECTORY}.
 	 * If not found, falls back to the OpenMRS logo from the classpath.
 	 * 
 	 * @param doc The XML document
@@ -330,14 +330,10 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 			final Path appDataPath = appDataDir.toPath().toRealPath();
 			final Path logoPath = Paths.get(logoUrlPath);
 			
-			// For absolute paths, verify they're within app data directory
+			// Reject absolute paths
 			if (logoPath.isAbsolute()) {
-				final Path logoRealPath = logoPath.toRealPath();
-				if (!isPathWithinAppDataDirectory(logoRealPath, appDataPath)) {
-					log.error("Absolute path must be within application data directory: {}", logoUrlPath);
-					return null;
-				}
-				return logoRealPath.toFile();
+				log.error("Absolute paths are not allowed for logo files: {}", logoUrlPath);
+				return null;
 			}
 			
 			// For relative paths, detect path traversal by comparing absolute and normalized paths

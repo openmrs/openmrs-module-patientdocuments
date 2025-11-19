@@ -28,7 +28,7 @@ These flags control which patient information is displayed on each sticker.
 | Key                                                           | Type    | Description                                      |
 |---------------------------------------------------------------|---------|--------------------------------------------------|
 | `report.patientIdSticker.stylesheet`                          | String  | XSL stylesheet to use for rendering stickers     |
-| `report.patientIdSticker.logourl`                             | String  | Logo path displayed on the sticker (both relative and absolute paths are supported, but absolute paths must be within the application data directory.) |
+| `report.patientIdSticker.logourl`                             | String  | Logo path displayed on the sticker (relative must be within the application data directory.) |
 | `report.patientIdSticker.header`                              | Boolean | Show a header section on each sticker            |
 | `report.patientIdSticker.barcode`                             | Boolean | Show a barcode section on each sticker           |
 | `report.patientIdSticker.pages`                               | Number  | Number of sticker pages to generate              |

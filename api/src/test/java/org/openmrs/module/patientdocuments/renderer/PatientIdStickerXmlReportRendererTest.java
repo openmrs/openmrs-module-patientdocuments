@@ -66,13 +66,13 @@ public class PatientIdStickerXmlReportRendererTest extends BaseModuleContextSens
 	}
 	
 	@Test
-	public void resolveSecureLogoPath_shouldRejectAbsolutePathsOutsideAppDataDirectory() throws Exception {
+	public void resolveSecureLogoPath_shouldRejectAbsolutePaths() throws Exception {
 		PatientIdStickerXmlReportRenderer renderer = new PatientIdStickerXmlReportRenderer();
-		Path outsideLogo = Files.createTempFile("outside-data-dir-logo", ".png");
+		Path outsideLogo = Files.createTempFile("absolute-path-logo", ".png");
 		
 		File resolvedLogoFile = renderer.resolveSecureLogoPath(outsideLogo.toString());
 		
-		Assertions.assertNull(resolvedLogoFile, "Absolute paths outside the app data directory must be rejected");
+		Assertions.assertNull(resolvedLogoFile, "Absolute paths must be rejected");
 		Files.deleteIfExists(outsideLogo);
 	}
 }

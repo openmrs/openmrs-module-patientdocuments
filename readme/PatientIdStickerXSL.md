@@ -278,6 +278,6 @@ The stylesheet includes several responsive design elements:
 - Configuration is managed through the Initializer module
 - Field visibility is controlled by boolean configuration properties
 - Secondary identifier type is specified by UUID in configuration
-- Logo input is an absolute or relative filesystem path resolved under `OPENMRS_APPLICATION_DATA_DIRECTORY`.
+- Logo input is a relative filesystem path resolved under `OPENMRS_APPLICATION_DATA_DIRECTORY`.
 - Barcode generation uses the preferred patient identifier
 - Multiple stickers can be generated based on the `pages` configuration

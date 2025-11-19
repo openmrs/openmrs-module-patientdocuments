@@ -164,9 +164,9 @@ The optional header section can contain:
 - An organizational logo on the left (from a file path under `OPENMRS_APPLICATION_DATA_DIRECTORY`)
 - Custom header text on the right
 - Logo handling behavior:
-  - Relative paths are resolved under `OPENMRS_APPLICATION_DATA_DIRECTORY`
-  - If none configured or missing, the default OpenMRS logo is loaded from the servlet context.
-  - Supported formats: absolute filesystem path (custom logo) or base64 data URI (default logo). The XSL-FO processor can handle both.
+  - Logo path is resolved relative to `OPENMRS_APPLICATION_DATA_DIRECTORY`.
+  - If none configured or missing, the default OpenMRS logo is loaded from the classpath
+  - Supported formats: PNG only.
 
 ### Internationalization Section
 
@@ -208,7 +208,7 @@ The stylesheet includes several responsive design elements:
 - **Demographic Grouping**: In MSF layout, groups Gender, DOB, and Age fields in a single row
 - **Secondary Identifier**: Special handling for secondary patient identifiers
 - **Internationalization**: Support for translated field labels and messages
-- **Logo Handling**: Pulled from the `OPENMRS_APPLICATION_DATA_DIRECTORY` or servlet context for the default OpenMRS logo.
+- **Logo Handling**: A custom logo can be provided as a PNG file stored in the application data directory. By default, this will use the OpenMRS logo.
 
 ## Technical Requirements
 
@@ -278,6 +278,6 @@ The stylesheet includes several responsive design elements:
 - Configuration is managed through the Initializer module
 - Field visibility is controlled by boolean configuration properties
 - Secondary identifier type is specified by UUID in configuration
-- Logo input is either an absolute filesystem path or a base64-encoded data URI (e.g., `data:image/png;base64,...`). Relative paths are resolved under `OPENMRS_APPLICATION_DATA_DIRECTORY`.
+- Logo input is a relative filesystem path resolved under `OPENMRS_APPLICATION_DATA_DIRECTORY`.
 - Barcode generation uses the preferred patient identifier
 - Multiple stickers can be generated based on the `pages` configuration

@@ -11,6 +11,14 @@
 	<context:component-scan base-package="org.openmrs.module.patientdocuments"/>
 
     <!--
+    Beans required by webservices.rest module components that get picked up by the core's org.openmrs component scan
+    when webservices.rest-omod-common is on the classpath.
+    -->
+    <bean id="xStreamMarshaller" class="org.springframework.oxm.xstream.XStreamMarshaller"/>
+    <bean id="stringHttpMessageConverter" class="org.springframework.http.converter.StringHttpMessageConverter"/>
+    <bean id="xmlMarshallingHttpMessageConverter" class="org.springframework.http.converter.StringHttpMessageConverter"/>
+
+    <!--
     From applicationContext-service.xml in openmrs-api
     Needed to override and add hibernate mappings to the classpath since omod is not packaged yet
     -->

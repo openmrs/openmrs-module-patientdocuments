@@ -15,6 +15,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.initializer.api.InitializerService;
 import org.openmrs.module.patientdocuments.common.PatientDocumentsConstants;
 import org.openmrs.module.patientdocuments.library.PatientIdStickerDataSetDefinition;
 import org.openmrs.module.patientdocuments.renderer.PatientIdStickerXmlReportRenderer;
@@ -27,6 +30,8 @@ import org.springframework.stereotype.Component;
 @Component(PatientDocumentsConstants.COMPONENT_REPORTMANAGER_PATIENT_ID_STICKER)
 public class PatientIdStickerReportManager extends BaseReportManager {
 	
+	public static final String REPORT_DESIGN_UUID_KEY = "report.patientIdSticker.patientIdStickerReportDesignUuid";
+	
 	public static final String REPORT_DESIGN_UUID = "68d04cbd-7a85-48df-9c70-677bc1a500e8";
 	
 	public static final String REPORT_DEFINITION_NAME = "Patient Identifier Sticker";
@@ -34,6 +39,28 @@ public class PatientIdStickerReportManager extends BaseReportManager {
 	public static final String DATASET_KEY_STICKER_FIELDS = "fields";
 	
 	private static final String PATIENT_ID_STICKER_PDF_NAME = "Patient ID Sticker PDF";
+	
+	private InitializerService initializerService;
+	
+	private InitializerService getInitializerService() {
+		if (initializerService == null) {
+			initializerService = Context.getService(InitializerService.class);
+		}
+		return initializerService;
+	}
+	
+	/**
+	 * Gets the report design UUID from configuration or returns the default.
+	 * 
+	 * @return the configured report design UUID or the default UUID if not configured
+	 */
+	private String getReportDesignUuid() {
+		String configuredUuid = getInitializerService().getValueFromKey(REPORT_DESIGN_UUID_KEY);
+		if (StringUtils.isNotBlank(configuredUuid)) {
+			return configuredUuid;
+		}
+		return REPORT_DESIGN_UUID;
+	}
 	
 	@Override
 	public String getVersion() {
@@ -87,7 +114,7 @@ public class PatientIdStickerReportManager extends BaseReportManager {
 	public List<ReportDesign> constructReportDesigns(ReportDefinition reportDefinition) {
 		ReportDesign reportDesign = new ReportDesign();
 		reportDesign.setName(PATIENT_ID_STICKER_PDF_NAME);
-		reportDesign.setUuid(REPORT_DESIGN_UUID);
+		reportDesign.setUuid(getReportDesignUuid());
 		reportDesign.setReportDefinition(reportDefinition);
 		reportDesign.setRendererType(PatientIdStickerXmlReportRenderer.class);
 		return Arrays.asList(reportDesign);

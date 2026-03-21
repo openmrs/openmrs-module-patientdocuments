@@ -19,6 +19,14 @@
 	</properties>
 
 	<dependencies>
+		<!-- Mockito inline is required for static mocking support in tests -->
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-inline</artifactId>
+			<version>3.12.4</version>
+			<scope>test</scope>
+		</dependency>
+
 		<dependency>
 			<groupId>org.openmrs.module</groupId>
 			<artifactId>calculation-api</artifactId>

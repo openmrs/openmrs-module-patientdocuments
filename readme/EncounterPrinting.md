@@ -59,6 +59,15 @@ Configuration for the XSL stylesheet used to render the PDF.
 |-----|-------------|
 | `report.encounterPrinting.stylesheet` | XSL stylesheet filename to use for rendering (e.g., `defaultEncounterFormFopStylesheet.xsl`) |
 
+### Logo
+Configuration for logo element in the PDF.
+
+| Key                                 | Description                                                               |
+|-------------------------------------|---------------------------------------------------------------------------|
+| `report.encounterPrinting.logopath` | Relative path to the logo image. If not configured, no logo is displayed. |
+
+**Note:** The logo path must be a relative path within the `OPENMRS_APPLICATION_DATA_DIRECTORY`. Path traversal is not allowed.
+
 ## Example Configuration
 
 ```json
@@ -77,7 +86,8 @@ Configuration for the XSL stylesheet used to render the PDF.
     "report.encounterPrinting.header.visitAttributes": "true",
     "report.encounterPrinting.header.visitAttributeTypes": "Payment Method",
     "report.encounterPrinting.footer.customText": "Organization Name",
-    "report.encounterPrinting.stylesheet": "defaultEncounterFormFopStylesheet.xsl"
+    "report.encounterPrinting.stylesheet": "defaultEncounterFormFopStylesheet.xsl",
+    "report.encounterPrinting.logopath": "branding/logo.png"
 }
 ```
 

@@ -29,9 +29,16 @@ import org.openmrs.module.o3forms.api.O3FormsService;
 import org.openmrs.module.patientdocuments.common.PatientDocumentsConstants;
 import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.util.OpenmrsUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -50,11 +57,70 @@ public class EncounterXmlBuilder {
 
 	private InitializerService initializerService;
 
+	private static final Logger log = LoggerFactory.getLogger(EncounterXmlBuilder.class);
+
 	private InitializerService getInitializerService() {
 		if (initializerService == null) {
 			initializerService = Context.getService(InitializerService.class);
 		}
 		return initializerService;
+	}
+
+	private String getLogoContent() {
+		String logoPath = getInitializerService().getValueFromKey(PatientDocumentsConstants.ENCOUNTER_PRINTING_LOGO_PATH_KEY);
+		if (StringUtils.isBlank(logoPath)) {
+			return null;
+		}
+
+		File logoFile = resolveSecureLogoPath(logoPath);
+		if (logoFile == null || !logoFile.exists() || !logoFile.canRead() || !logoFile.isFile()) {
+			return null;
+		}
+
+		try {
+			byte[] logoBytes = OpenmrsUtil.getFileAsBytes(logoFile);
+			if (logoBytes != null && logoBytes.length > 0) {
+				return "data:image/png;base64," + Base64.getEncoder().encodeToString(logoBytes);
+			}
+		} catch (IOException e) {
+			log.warn("Unable to read logo file");
+		}
+
+		return null;
+	}
+
+	private File resolveSecureLogoPath(String logoUrlPath) {
+		if (StringUtils.isBlank(logoUrlPath)) {
+			return null;
+		}
+
+		final File appDataDir = OpenmrsUtil.getApplicationDataDirectoryAsFile();
+		try {
+			final Path appDataPath = appDataDir.toPath().toRealPath();
+			final Path logoPath = Paths.get(logoUrlPath);
+
+			if (logoPath.isAbsolute()) {
+				return null;
+			}
+
+			final Path logoAbsolutePath = logoPath.toAbsolutePath();
+			final Path logoNormalizedPath = logoAbsolutePath.normalize();
+
+			if (!logoAbsolutePath.equals(logoNormalizedPath)) {
+				return null;
+			}
+
+			final Path resolvedLogoPath = appDataPath.resolve(logoUrlPath).normalize();
+			final Path resolvedLogoRealPath = resolvedLogoPath.toRealPath();
+
+			if (!resolvedLogoRealPath.startsWith(appDataPath)) {
+				return null;
+			}
+
+			return resolvedLogoRealPath.toFile();
+		} catch (IllegalArgumentException | IOException e) {
+			return null;
+		}
 	}
 
 	public String build(EncounterPrintingContext printingContext) {
@@ -91,6 +157,11 @@ public class EncounterXmlBuilder {
 		StringBuilder xml = new StringBuilder();
 		Visit visit = encounter.getVisit();
 		Patient patient = encounter.getPatient();
+
+		String logoContent = getLogoContent();
+		if (logoContent != null) {
+			xml.append("<logo>").append(escape(logoContent)).append("</logo>");
+		}
 
 		if (isHeaderFieldEnabled("patientName")) {
 			xml.append("<patientName>")

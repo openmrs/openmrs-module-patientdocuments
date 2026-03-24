@@ -113,7 +113,7 @@ public class EncounterPdfReportRenderer extends ReportDesignRenderer {
 	}
 
 	private String getStylesheetName() {
-		String stylesheetName = Context.getService(InitializerService.class).getValueFromKey(PatientDocumentsConstants.ENCOUNTER_STYLESHEET_KEY);
+		String stylesheetName = Context.getService(InitializerService.class).getValueFromKey(PatientDocumentsConstants.ENCOUNTER_PRINTING_STYLESHEET_KEY);
 		if (StringUtils.isBlank(stylesheetName)) {
 			stylesheetName = PatientDocumentsConstants.DEFAULT_ENCOUNTER_FORM_XSL_PATH;
 		}

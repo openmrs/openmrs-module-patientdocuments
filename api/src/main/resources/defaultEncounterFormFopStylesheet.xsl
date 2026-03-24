@@ -6,6 +6,11 @@
     <xsl:template match="/">
         <fo:root>
             <fo:layout-master-set>
+                <fo:simple-page-master master-name="A4-with-logo" page-height="29.7cm" page-width="21cm" margin="1.5cm">
+                    <fo:region-body margin-top="0.5cm" margin-bottom="1.5cm"/>
+                    <fo:region-before extent="0.5cm"/>
+                    <fo:region-after extent="1.5cm"/>
+                </fo:simple-page-master>
                 <fo:simple-page-master master-name="A4" page-height="29.7cm" page-width="21cm" margin="1.5cm">
                     <fo:region-body margin-top="2.5cm" margin-bottom="1.5cm"/>
                     <fo:region-before extent="2.5cm"/>
@@ -17,37 +22,108 @@
         </fo:root>
     </xsl:template>
 
-    <xsl:template name="render-header-field">
-        <xsl:param name="label"/>
-        <xsl:param name="value"/>
-        <xsl:if test="$value">
-            <fo:block>
-                <xsl:choose>
-                    <xsl:when test="$label = 'patientName'">
-                        <fo:inline font-weight="bold" font-size="12pt"><xsl:value-of select="$label"/>: </fo:inline><xsl:value-of select="$value"/>
-                    </xsl:when>
-                    <xsl:otherwise>
-                        <xsl:value-of select="$label"/>: <xsl:value-of select="$value"/>
-                    </xsl:otherwise>
-                </xsl:choose>
-            </fo:block>
-        </xsl:if>
-    </xsl:template>
-
     <xsl:template match="encounter">
-        <fo:page-sequence master-reference="A4">
-            <fo:static-content flow-name="xsl-region-before">
-                <xsl:variable name="hasHeader" select="patientName or location or visitDate or encounterDate or visitStartDate or visitEndDate or visitType or formNameInHeader or patientIdentifiers or personAttributes or visitAttributes"/>
-                <fo:block border-bottom="1pt solid #ccc" padding-bottom="2mm" font-size="10pt" color="#555">
-                    <xsl:if test="$hasHeader">
-                        <fo:table width="100%" table-layout="fixed">
-                            <fo:table-column column-width="50%"/>
-                            <fo:table-column column-width="50%"/>
-                            <fo:table-body>
-                                <fo:table-row>
-                                    <fo:table-cell>
-                                        <xsl:choose>
-                                            <xsl:when test="patientName or location or visitStartDate or personAttributes or formNameInHeader">
+        <xsl:choose>
+            <xsl:when test="logo">
+                <fo:page-sequence master-reference="A4-with-logo">
+                    <fo:static-content flow-name="xsl-region-before">
+                        <fo:block/>
+                    </fo:static-content>
+
+                    <fo:static-content flow-name="xsl-region-after">
+                        <fo:block text-align="center" border-top="0.5pt solid #eee" padding-top="2mm">
+                            <fo:block font-size="8pt" color="#777" margin-bottom="1mm">
+                                <xsl:value-of select="printedBy"/>
+                            </fo:block>
+                            <xsl:if test="customFooterText">
+                                <fo:block font-size="8pt" color="#777" margin-bottom="1mm">
+                                    <xsl:value-of select="customFooterText"/>
+                                </fo:block>
+                            </xsl:if>
+                            <fo:block font-size="8pt" color="#999">
+                                Page <fo:page-number/>
+                            </fo:block>
+                        </fo:block>
+                    </fo:static-content>
+
+                    <fo:flow flow-name="xsl-region-body">
+                        <fo:block text-align="center" margin-bottom="4mm">
+                            <fo:external-graphic width="100mm" height="25mm" content-width="scale-down-to-fit" content-height="scale-down-to-fit">
+                                <xsl:attribute name="src"><xsl:value-of select="logo"/></xsl:attribute>
+                            </fo:external-graphic>
+                        </fo:block>
+
+                        <xsl:if test="patientName or location or visitDate or encounterDate or visitStartDate or visitEndDate or visitType or formNameInHeader or patientIdentifiers or personAttributes or visitAttributes">
+                            <fo:table width="100%" table-layout="fixed" margin-bottom="4mm">
+                                <fo:table-column column-width="50%"/>
+                                <fo:table-column column-width="50%"/>
+                                <fo:table-body>
+                                    <fo:table-row>
+                                        <fo:table-cell>
+                                            <xsl:if test="patientName">
+                                                <fo:block font-weight="bold" font-size="12pt">Patient Name: <xsl:value-of select="patientName"/></fo:block>
+                                            </xsl:if>
+                                            <xsl:if test="location">
+                                                <fo:block>Location: <xsl:value-of select="location"/></fo:block>
+                                            </xsl:if>
+                                            <xsl:if test="visitStartDate">
+                                                <fo:block>Visit Start: <xsl:value-of select="visitStartDate"/></fo:block>
+                                            </xsl:if>
+                                            <xsl:if test="personAttributes">
+                                                <xsl:for-each select="personAttributes/attribute">
+                                                    <fo:block><xsl:value-of select="@type"/>: <xsl:value-of select="."/></fo:block>
+                                                </xsl:for-each>
+                                            </xsl:if>
+                                            <xsl:if test="formNameInHeader">
+                                                <fo:block>Form: <xsl:value-of select="formName"/></fo:block>
+                                            </xsl:if>
+                                        </fo:table-cell>
+                                        <fo:table-cell text-align="right">
+                                            <xsl:if test="encounterDate">
+                                                <fo:block>Encounter Date: <xsl:value-of select="encounterDate"/></fo:block>
+                                            </xsl:if>
+                                            <xsl:if test="visitEndDate">
+                                                <fo:block>Visit End: <xsl:value-of select="visitEndDate"/></fo:block>
+                                            </xsl:if>
+                                            <xsl:if test="visitType">
+                                                <fo:block>Visit Type: <xsl:value-of select="visitType"/></fo:block>
+                                            </xsl:if>
+                                            <xsl:if test="patientIdentifiers">
+                                                <xsl:for-each select="patientIdentifiers/identifier">
+                                                    <fo:block><xsl:value-of select="@type"/>: <xsl:value-of select="."/></fo:block>
+                                                </xsl:for-each>
+                                            </xsl:if>
+                                            <xsl:if test="visitAttributes">
+                                                <xsl:for-each select="visitAttributes/attribute">
+                                                    <fo:block><xsl:value-of select="@type"/>: <xsl:value-of select="."/></fo:block>
+                                                </xsl:for-each>
+                                            </xsl:if>
+                                        </fo:table-cell>
+                                    </fo:table-row>
+                                </fo:table-body>
+                            </fo:table>
+                        </xsl:if>
+
+                        <fo:block font-size="16pt" font-weight="bold" text-align="center" margin-top="4mm" margin-bottom="8mm" color="#2c3e50">
+                            <xsl:value-of select="formName"/>
+                        </fo:block>
+
+                        <xsl:apply-templates select="pages/page"/>
+                    </fo:flow>
+                </fo:page-sequence>
+            </xsl:when>
+            <xsl:otherwise>
+                <fo:page-sequence master-reference="A4">
+                    <fo:static-content flow-name="xsl-region-before">
+                        <xsl:variable name="hasHeader" select="patientName or location or visitDate or encounterDate or visitStartDate or visitEndDate or visitType or formNameInHeader or patientIdentifiers or personAttributes or visitAttributes"/>
+                        <fo:block border-bottom="1pt solid #ccc" padding-bottom="2mm" font-size="10pt" color="#555">
+                            <xsl:if test="$hasHeader">
+                                <fo:table width="100%" table-layout="fixed">
+                                    <fo:table-column column-width="50%"/>
+                                    <fo:table-column column-width="50%"/>
+                                    <fo:table-body>
+                                        <fo:table-row>
+                                            <fo:table-cell>
                                                 <xsl:if test="patientName">
                                                     <fo:block font-weight="bold" font-size="12pt">Patient Name: <xsl:value-of select="patientName"/></fo:block>
                                                 </xsl:if>
@@ -65,15 +141,8 @@
                                                 <xsl:if test="formNameInHeader">
                                                     <fo:block>Form: <xsl:value-of select="formName"/></fo:block>
                                                 </xsl:if>
-                                            </xsl:when>
-                                            <xsl:otherwise>
-                                                <fo:block/>
-                                            </xsl:otherwise>
-                                        </xsl:choose>
-                                    </fo:table-cell>
-                                    <fo:table-cell text-align="right">
-                                        <xsl:choose>
-                                            <xsl:when test="visitDate or encounterDate or visitEndDate or visitType or patientIdentifiers or visitAttributes">
+                                            </fo:table-cell>
+                                            <fo:table-cell text-align="right">
                                                 <xsl:if test="visitDate">
                                                     <fo:block>Visit Date: <xsl:value-of select="visitDate"/></fo:block>
                                                 </xsl:if>
@@ -96,43 +165,40 @@
                                                         <fo:block><xsl:value-of select="@type"/>: <xsl:value-of select="."/></fo:block>
                                                     </xsl:for-each>
                                                 </xsl:if>
-                                            </xsl:when>
-                                            <xsl:otherwise>
-                                                <fo:block/>
-                                            </xsl:otherwise>
-                                        </xsl:choose>
-                                    </fo:table-cell>
-                                </fo:table-row>
-                            </fo:table-body>
-                        </fo:table>
-                    </xsl:if>
-                </fo:block>
-            </fo:static-content>
-
-            <fo:static-content flow-name="xsl-region-after">
-                <fo:block text-align="center" border-top="0.5pt solid #eee" padding-top="2mm">
-                    <fo:block font-size="8pt" color="#777" margin-bottom="1mm">
-                        <xsl:value-of select="printedBy"/>
-                    </fo:block>
-                    <xsl:if test="customFooterText">
-                        <fo:block font-size="8pt" color="#777" margin-bottom="1mm">
-                            <xsl:value-of select="customFooterText"/>
+                                            </fo:table-cell>
+                                        </fo:table-row>
+                                    </fo:table-body>
+                                </fo:table>
+                            </xsl:if>
                         </fo:block>
-                    </xsl:if>
-                    <fo:block font-size="8pt" color="#999">
-                        Page <fo:page-number/>
-                    </fo:block>
-                </fo:block>
-            </fo:static-content>
+                    </fo:static-content>
 
-            <fo:flow flow-name="xsl-region-body">
-                <fo:block font-size="16pt" font-weight="bold" text-align="center" margin-bottom="8mm" color="#2c3e50">
-                    <xsl:value-of select="formName"/>
-                </fo:block>
+                    <fo:static-content flow-name="xsl-region-after">
+                        <fo:block text-align="center" border-top="0.5pt solid #eee" padding-top="2mm">
+                            <fo:block font-size="8pt" color="#777" margin-bottom="1mm">
+                                <xsl:value-of select="printedBy"/>
+                            </fo:block>
+                            <xsl:if test="customFooterText">
+                                <fo:block font-size="8pt" color="#777" margin-bottom="1mm">
+                                    <xsl:value-of select="customFooterText"/>
+                                </fo:block>
+                            </xsl:if>
+                            <fo:block font-size="8pt" color="#999">
+                                Page <fo:page-number/>
+                            </fo:block>
+                        </fo:block>
+                    </fo:static-content>
 
-                <xsl:apply-templates select="pages/page"/>
-            </fo:flow>
-        </fo:page-sequence>
+                    <fo:flow flow-name="xsl-region-body">
+                        <fo:block font-size="16pt" font-weight="bold" text-align="center" margin-top="4mm" margin-bottom="8mm" color="#2c3e50">
+                            <xsl:value-of select="formName"/>
+                        </fo:block>
+
+                        <xsl:apply-templates select="pages/page"/>
+                    </fo:flow>
+                </fo:page-sequence>
+            </xsl:otherwise>
+        </xsl:choose>
     </xsl:template>
 
     <xsl:template match="page">

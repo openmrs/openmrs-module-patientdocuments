@@ -38,7 +38,9 @@ public class PatientDocumentsConstants {
 
 	public static final String ENCOUNTER_PRINTING_FOOTER_PREFIX = "report.encounterPrinting.footer.";
 
-	public static final String ENCOUNTER_STYLESHEET_KEY = "report.encounterPrinting.stylesheet";
+	public static final String ENCOUNTER_PRINTING_STYLESHEET_KEY = "report.encounterPrinting.stylesheet";
+
+	public static final String ENCOUNTER_PRINTING_LOGO_PATH_KEY = "report.encounterPrinting.logopath";
 
 	public static final String NO_DATA_RECORDED_PLACEHOLDER = "No data recorded";
 

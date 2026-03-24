@@ -31,4 +31,18 @@ public class PatientDocumentsConstants {
 	 * The path to the style sheet for Patient History reports.
 	 */
 	public static final String PATIENT_ID_STICKER_XSL_PATH = "patientIdStickerFopStylesheet.xsl";
+
+	public static final String DEFAULT_ENCOUNTER_FORM_XSL_PATH = "defaultEncounterFormFopStylesheet.xsl";
+
+	public static final String ENCOUNTER_PRINTING_HEADER_PREFIX = "report.encounterPrinting.header.";
+
+	public static final String ENCOUNTER_PRINTING_FOOTER_PREFIX = "report.encounterPrinting.footer.";
+
+	public static final String ENCOUNTER_PRINTING_STYLESHEET_KEY = "report.encounterPrinting.stylesheet";
+
+	public static final String ENCOUNTER_PRINTING_LOGO_PATH_KEY = "report.encounterPrinting.logopath";
+
+	public static final String NO_DATA_RECORDED_PLACEHOLDER = "No data recorded";
+
+	public static final String MISSING_VALUE_PLACEHOLDER = "-";
 }

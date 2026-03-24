@@ -56,6 +56,7 @@
 		<initializerVersion>2.9.0</initializerVersion>
 		<openpdfVersion>1.3.11</openpdfVersion>
 		<openmrsWebRestVersion>2.50.0</openmrsWebRestVersion>
+		<o3FormsVersion>2.3.0</o3FormsVersion>
 	</properties>
 
 	<dependencies>

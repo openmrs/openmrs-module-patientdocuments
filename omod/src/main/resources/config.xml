@@ -21,6 +21,9 @@
 		<require_module version="${initializerVersion}">
 			org.openmrs.module.initializer
 		</require_module>
+		<require_module version="${o3FormsVersion}">
+			org.openmrs.module.o3forms
+		</require_module>
 	</require_modules>
 
 	<messages>
@@ -37,6 +40,11 @@
 	<privilege>
 		<name>App: Can generate a Patient Identity Sticker</name>
 		<description>Allows user to access the patient identifier sticker report.</description>
+	</privilege>
+
+	<privilege>
+		<name>App: Print encounter forms</name>
+		<description>Allows user to print encounter forms</description>
 	</privilege>
 	<!-- /Required Privileges -->
 

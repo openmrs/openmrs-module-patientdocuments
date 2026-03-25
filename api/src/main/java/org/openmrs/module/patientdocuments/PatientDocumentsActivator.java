@@ -12,6 +12,7 @@ package org.openmrs.module.patientdocuments;
 import static org.openmrs.module.patientdocuments.common.PatientDocumentsConstants.MODULE_NAME;
 
 import org.openmrs.module.BaseModuleActivator;
+import org.openmrs.module.patientdocuments.reports.EncounterPdfReportManager;
 import org.openmrs.module.patientdocuments.reports.PatientIdStickerReportManager;
 import org.openmrs.module.reporting.report.manager.ReportManagerUtil;
 import org.slf4j.Logger;
@@ -41,6 +42,17 @@ public class PatientDocumentsActivator extends BaseModuleActivator {
 		}
 		catch (Exception e) {
 			log.error("Failed to set up report '{}'", patientIdStickerReportName, e);
+		}
+
+		EncounterPdfReportManager encounterReportManager = new EncounterPdfReportManager();
+		String encounterPdfReportName = encounterReportManager.getName();
+
+		log.info("Setting up report: {} ...", encounterPdfReportName);
+		try {
+			ReportManagerUtil.setupReport(encounterReportManager);
+			log.info("Successfully set up report: {}", encounterPdfReportName);
+		} catch (Exception e) {
+			log.error("Failed to set up report '{}'", encounterPdfReportName, e);
 		}
 	}
 	

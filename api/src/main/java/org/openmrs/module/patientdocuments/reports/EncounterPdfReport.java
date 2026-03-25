@@ -35,6 +35,7 @@ public class EncounterPdfReport {
 
 		SimpleObject response = new SimpleObject();
 		response.put("uuid", reportRequest.getUuid());
+		response.put("requestUuid", reportRequest.getUuid());
 		response.put("status", reportRequest.getStatus().name());
 
 		return response;

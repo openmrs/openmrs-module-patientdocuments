@@ -110,6 +110,7 @@ POST /openmrs/ws/rest/v1/patientdocuments/encounters
 **Response:**
 ```json
 {
+  "uuid": "report-request-uuid",
   "requestUuid": "report-request-uuid",
   "status": "QUEUED"
 }

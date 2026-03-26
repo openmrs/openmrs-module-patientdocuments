@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    uses: openmrs/openmrs-contrib-gha-workflows/.github/workflows/build-backend-module.yml@main
+    uses: openmrs/openmrs-contrib-gha-workflows/.github/workflows/build-backend-module.yml@fix/owasp/supression
     with:
       java_versions: '["8"]'
       main_java_version: '8'

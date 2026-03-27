@@ -101,6 +101,12 @@
 		</dependency>
 
 		<dependency>
+			<groupId>com.github.librepdf</groupId>
+			<artifactId>openpdf</artifactId>
+			<version>${openpdfVersion}</version>
+		</dependency>
+
+		<dependency>
 			<groupId>net.sf.barcode4j</groupId>
 			<artifactId>barcode4j-fop-ext</artifactId>
 			<version>${barcode4jVersion}</version>

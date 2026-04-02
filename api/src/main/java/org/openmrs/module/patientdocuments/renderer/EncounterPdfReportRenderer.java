@@ -28,6 +28,7 @@ import org.openmrs.module.reporting.report.renderer.RenderingException;
 import org.openmrs.module.reporting.report.renderer.ReportDesignRenderer;
 import org.springframework.stereotype.Component;
 
+import javax.xml.XMLConstants;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
@@ -105,6 +106,8 @@ public class EncounterPdfReportRenderer extends ReportDesignRenderer {
 			}
 
 			TransformerFactory factory = TransformerFactory.newInstance();
+			factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+			factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
 			Transformer transformer = factory.newTransformer(new StreamSource(xslStream));
 			Source src = new StreamSource(new StringReader(xmlData));
 			Result res = new SAXResult(fop.getDefaultHandler());

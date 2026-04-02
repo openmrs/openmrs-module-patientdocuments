@@ -9,6 +9,7 @@
  */
 package org.openmrs.module.patientdocuments.web.rest.controller;
 
+import org.apache.commons.lang3.StringUtils;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.context.ContextAuthenticationException;
 import org.openmrs.module.patientdocuments.common.PatientDocumentsPrivilegeConstants;
@@ -18,11 +19,8 @@ import org.openmrs.module.reporting.report.service.ReportService;
 import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
-import org.openmrs.util.OpenmrsUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,16 +29,26 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.File;
-import java.nio.file.Files;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import static org.openmrs.module.patientdocuments.common.PatientDocumentsConstants.MODULE_ARTIFACT_ID;
 
 @Controller
 @RequestMapping(value = "/rest/" + RestConstants.VERSION_1 + "/" + MODULE_ARTIFACT_ID + "/encounters")
 public class EncounterDataPdfExportController extends BaseRestController {
+
+	private static final int MAX_ENCOUNTER_UUIDS = 1000;
+
+	private static final Pattern UUID_PATTERN = Pattern.compile(
+			"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
 
 	@Autowired
 	private EncounterPdfReport encounterPdfReport;
@@ -50,6 +58,17 @@ public class EncounterDataPdfExportController extends BaseRestController {
 	public ResponseEntity<SimpleObject> triggerEncounterPrinting(@RequestBody List<String> encounterUuids) {
 		if (encounterUuids == null || encounterUuids.isEmpty()) {
 			return ResponseEntity.badRequest().body(createError("No encounter UUIDs provided"));
+		}
+
+		if (encounterUuids.size() > MAX_ENCOUNTER_UUIDS) {
+			return ResponseEntity.badRequest().body(
+					createError("Too many encounter UUIDs. Maximum allowed: " + MAX_ENCOUNTER_UUIDS));
+		}
+
+		for (String uuid : encounterUuids) {
+			if (StringUtils.isBlank(uuid) || !UUID_PATTERN.matcher(uuid).matches()) {
+				return ResponseEntity.badRequest().body(createError("Invalid UUID format: " + uuid));
+			}
 		}
 
 		try {
@@ -90,35 +109,46 @@ public class EncounterDataPdfExportController extends BaseRestController {
 	}
 
 	@RequestMapping(value = "/download/{requestUuid}", method = RequestMethod.GET)
-	public ResponseEntity<byte[]> downloadPdf(@PathVariable("requestUuid") String requestUuid) {
+	public void downloadPdf(@PathVariable("requestUuid") String requestUuid,
+			HttpServletResponse response) throws IOException {
 		try {
 			validatePrivileges();
 			ReportService reportService = Context.getService(ReportService.class);
 			ReportRequest request = reportService.getReportRequestByUuid(requestUuid);
 
 			if (request == null || request.getStatus() != ReportRequest.Status.COMPLETED) {
-				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+				response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+				return;
 			}
 
 			File file = reportService.getReportOutputFile(request);
 			if (file == null || !file.exists()) {
-				return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+				response.sendError(HttpServletResponse.SC_NOT_FOUND);
+				return;
 			}
 
-			byte[] pdfBytes = Files.readAllBytes(file.toPath());
-
-			HttpHeaders headers = new HttpHeaders();
-			headers.setContentType(MediaType.APPLICATION_PDF);
-
-			String dateStr = OpenmrsUtil.getDateFormat(Context.getLocale()).format(new Date());
+			String dateStr = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
 			String filename = dateStr + "_PatientReport.pdf";
-			headers.add("Content-Disposition", "attachment; filename=\"" + filename + "\"");
 
-			return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+			response.setContentType("application/pdf");
+			response.setContentLength((int) file.length());
+			response.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+
+			try (FileInputStream fis = new FileInputStream(file);
+					OutputStream out = response.getOutputStream()) {
+				byte[] buffer = new byte[8192];
+				int bytesRead;
+				while ((bytesRead = fis.read(buffer)) != -1) {
+					out.write(buffer, 0, bytesRead);
+				}
+				out.flush();
+			}
 		} catch (ContextAuthenticationException e) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
+			response.sendError(HttpServletResponse.SC_FORBIDDEN);
+		} catch (IOException e) {
+			throw e;
 		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+			response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		}
 	}
 

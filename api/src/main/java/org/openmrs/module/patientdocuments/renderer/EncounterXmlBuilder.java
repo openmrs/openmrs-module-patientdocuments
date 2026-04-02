@@ -9,8 +9,8 @@
  */
 package org.openmrs.module.patientdocuments.renderer;
 
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.openmrs.Concept;
 import org.openmrs.ConceptName;
 import org.openmrs.Encounter;
@@ -327,7 +327,7 @@ public class EncounterXmlBuilder {
 		String type = (String) question.get("type");
 
 		if ("markdown".equals(type) || "label".equals(type)) {
-			return renderMarkdownQuestion(question, locale);
+			return renderMarkdownQuestion(question);
 		}
 
 		if ("obsGroup".equals(type)) {
@@ -341,7 +341,7 @@ public class EncounterXmlBuilder {
 		return renderSubQuestions(question, obsMap, locale);
 	}
 
-	private String renderMarkdownQuestion(Map<String, Object> question, Locale locale) {
+	private String renderMarkdownQuestion(Map<String, Object> question) {
 		StringBuilder sb = new StringBuilder();
 		String text = formatValueAsText(question.get("value"));
 		sb.append("<markdown>").append(escape(text)).append("</markdown>");
@@ -411,7 +411,7 @@ public class EncounterXmlBuilder {
 			return PatientDocumentsConstants.NO_DATA_RECORDED_PLACEHOLDER;
 		}
 
-		Concept concept = findConceptByRef(conceptRef);
+		Concept concept = getConceptService().getConceptByReference(conceptRef);
 		if (concept == null || !obsMap.containsKey(concept.getUuid())) {
 			return PatientDocumentsConstants.NO_DATA_RECORDED_PLACEHOLDER;
 		}
@@ -427,16 +427,7 @@ public class EncounterXmlBuilder {
 	}
 
 	private String escape(String input) {
-		return StringEscapeUtils.escapeXml(StringUtils.defaultString(input));
-	}
-
-	private Concept findConceptByRef(String conceptRef) {
-		Concept concept = getConceptService().getConceptByReference(conceptRef);
-		if (concept == null) {
-			concept = getConceptService().getConceptByUuid(conceptRef); // fallback for UUIDs that are non-UUID format
-		}
-
-		return concept;
+		return StringEscapeUtils.escapeXml10(StringUtils.defaultString(input));
 	}
 
 	private String getLocalizedObsValue(Obs obs, Locale locale) {

@@ -28,16 +28,8 @@ public class EncounterPrintingContext {
 		return encounters;
 	}
 
-	public void setEncounters(List<Encounter> encounters) {
-		this.encounters = encounters;
-	}
-
 	public Locale getLocale() {
 		return locale;
-	}
-
-	public void setLocale(Locale locale) {
-		this.locale = locale;
 	}
 }
 

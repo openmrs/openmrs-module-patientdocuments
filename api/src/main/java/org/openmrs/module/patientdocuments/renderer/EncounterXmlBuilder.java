@@ -234,6 +234,9 @@ public class EncounterXmlBuilder {
 
 		String userName = (user != null && user.getPersonName() != null) ? user.getPersonName().getFullName() : "System";
 		String systemId = (user != null && user.getSystemId() != null) ? user.getSystemId() : "Unknown";
+		// JDK 20+ locale-aware date formats use U+202F (narrow no-break space) before AM/PM.
+		// The font embedded by Apache FOP lacks that glyph and renders it as "#" in the PDF,
+		// so we normalize it (and U+00A0) to a regular ASCII space.
 		String printTimestamp = OpenmrsUtil.getDateTimeFormat(locale).format(new Date())
 				.replace('\u202F', ' ').replace('\u00A0', ' ');
 

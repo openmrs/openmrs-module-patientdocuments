@@ -129,6 +129,11 @@
 					<groupId>org.apache.avalon.framework</groupId>
 					<artifactId>avalon-framework-impl</artifactId>
 				</exclusion>
+				<!-- Only needed by barcode4j's optional Ant task; we render via FOP. Drops vulnerable ant 1.7.1 (CVE-2020-1945). -->
+				<exclusion>
+					<groupId>org.apache.ant</groupId>
+					<artifactId>ant</artifactId>
+				</exclusion>
 			</exclusions>
 		</dependency>
 

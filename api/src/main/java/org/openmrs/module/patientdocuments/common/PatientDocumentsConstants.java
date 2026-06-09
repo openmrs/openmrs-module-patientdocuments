@@ -27,6 +27,12 @@ public class PatientDocumentsConstants {
 	
 	public static final String COMPONENT_REPORTMANAGER_PATIENT_ID_STICKER = MODULE_ARTIFACT_ID + "." + PATIENT_ID_STICKER_ID;
 	
+	public static final String VISIT_SUMMARY_REPORT_ID = "visitSummary";
+	
+	public static final String COMPONENT_REPORTMANAGER_VISIT_SUMMARY = MODULE_ARTIFACT_ID + "." + VISIT_SUMMARY_REPORT_ID;
+	
+	public static final String VISIT_SUMMARY_REPORT_UUID = "4fb1f692-7ead-4257-bbe1-97fac0295171";
+	
 	/**
 	 * The path to the style sheet for Patient History reports.
 	 */

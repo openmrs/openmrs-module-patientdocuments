@@ -44,12 +44,6 @@
             <scope>test</scope>
         </dependency>
 		<dependency>
-			<groupId>com.github.librepdf</groupId>
-			<artifactId>openpdf</artifactId>
-			<version>${openpdfVersion}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
 			<groupId>org.apache.pdfbox</groupId>
 			<artifactId>pdfbox</artifactId>
 			<version>${pdfboxVersion}</version>

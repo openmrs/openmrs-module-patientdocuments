@@ -108,18 +108,31 @@ public class VisitSummaryPdfExportControllerTest extends BaseModuleWebContextSen
 
 	/**
 	 * The same cache that lets an earlier test class leak into this one lets this one leak
-	 * out, so put the section toggles back rather than relying on every other class to
-	 * re-assert them in its own setUp.
+	 * out, so put back everything setUp pinned rather than relying on every other class to
+	 * re-assert it in its own setUp.
+	 * <p>
+	 * The section toggles have a known-correct value to restore. The vitals concept list
+	 * does not — its production default lives in the api module and is not visible here —
+	 * so it is purged instead, which puts ConfigUtil back to falling through to that
+	 * default rather than to this class's three-concept test value.
 	 */
 	@AfterEach
-	public void restoreSectionToggles() {
+	public void restoreGlobalProperties() {
 		for (String sectionKey : TOGGLEABLE_SECTION_KEYS) {
 			saveGlobalProperty(SECTION_GP_PREFIX + sectionKey + ".enabled", "true");
 		}
+		purgeGlobalProperty(VITALS_CONCEPTS_GP);
 	}
 
 	private void saveGlobalProperty(String property, String value) {
 		Context.getAdministrationService().saveGlobalProperty(new GlobalProperty(property, value));
+	}
+
+	private void purgeGlobalProperty(String property) {
+		GlobalProperty existing = Context.getAdministrationService().getGlobalPropertyObject(property);
+		if (existing != null) {
+			Context.getAdministrationService().purgeGlobalProperty(existing);
+		}
 	}
 
 	/**
@@ -260,6 +273,32 @@ public class VisitSummaryPdfExportControllerTest extends BaseModuleWebContextSen
 
 		assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
 		assertNull("A 404 must not carry a PDF body", response.getBody());
+	}
+
+	// ── Generation failure ────────────────────────────────────────────────────
+
+	/**
+	 * The controller's generic {@code catch (Exception)} arm was the one path through
+	 * this class no test reached, so nothing held it to answering 500 rather than
+	 * propagating and letting the framework decide.
+	 * <p>
+	 * Driven through a real, reachable misconfiguration rather than a mock: pointing
+	 * {@code report.visitSummary.stylesheet} at a resource that is not on the classpath
+	 * makes the report throw, which is exactly what an administrator gets after a typo.
+	 */
+	@Test
+	public void getVisitSummary_shouldReturnServerErrorWhenGenerationFails() {
+		saveGlobalProperty("report.visitSummary.stylesheet", "no/such/stylesheet.xsl");
+		try {
+			ResponseEntity<byte[]> response = controller.getVisitSummary(POPULATED_VISIT_UUID, true);
+
+			assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+			assertNotNull(response.getBody());
+			assertEquals("Error generating PDF", new String(response.getBody(), StandardCharsets.UTF_8));
+		}
+		finally {
+			purgeGlobalProperty("report.visitSummary.stylesheet");
+		}
 	}
 
 	// ── Response headers ──────────────────────────────────────────────────────

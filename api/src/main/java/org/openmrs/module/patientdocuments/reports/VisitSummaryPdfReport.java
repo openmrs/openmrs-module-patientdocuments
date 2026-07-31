@@ -70,8 +70,13 @@ public class VisitSummaryPdfReport {
 	public byte[] generatePdf(String visitUuid)  {
 		Context.requirePrivilege(PatientDocumentsPrivilegeConstants.VIEW_VISIT_SUMMARY);
 
-		// Visit existence is validated by the controller (404) and the evaluator
-		// (returns empty DataSet). No redundant fetch here.
+		// Visit existence is validated by the caller — the REST controller answers 404
+		// before it gets here — so there is no redundant fetch. That check is
+		// load-bearing, not a convenience: the evaluator does return an empty DataSet
+		// for an unresolvable uuid, but the renderer then emits a document with no
+		// sections, the stylesheet turns that into an fo:flow with no children, and FOP
+		// rejects it. See
+		// VisitSummaryPdfAdversarialDataTest#shouldFailCleanlyWhenTheVisitUuidDoesNotResolve.
 		try {
 			ReportData reportData = createReportData(visitUuid);
 			byte[] xmlBytes = renderReportToXml(reportData);

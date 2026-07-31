@@ -22,6 +22,7 @@ import org.openmrs.module.reporting.report.manager.ReportManagerUtil;
 import org.openmrs.web.test.jupiter.BaseModuleWebContextSensitiveTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -144,6 +145,39 @@ public class PatientIdStickerDataPdfExportControllerTest extends BaseModuleWebCo
 		finally {
 			authenticate();
 		}
+	}
+
+	/**
+	 * Every other test in this class passes {@code inline=false}, so the default — and the
+	 * only value the O3 UI actually sends — was never exercised, and neither were the
+	 * response headers the browser needs to display the sticker rather than download it.
+	 */
+	@Test
+	public void getPatientIdSticker_shouldSetInlinePdfHeadersWhenInlineIsTrue() {
+		Context.setLocale(Locale.ENGLISH);
+		MockHttpServletResponse response = new MockHttpServletResponse();
+
+		ResponseEntity<byte[]> result = patientStickerController.getPatientIdSticker(response, TEST_PATIENT_UUID, true);
+
+		assertEquals(HttpStatus.OK, result.getStatusCode());
+		HttpHeaders headers = result.getHeaders();
+		assertEquals("application/pdf", headers.getFirst("Content-Type"));
+		assertEquals("inline; filename=\"patientIdSticker.pdf\"", headers.getFirst("Content-Disposition"));
+		assertNotNull(result.getBody());
+		assertEquals("Content-Length must match the body", result.getBody().length, headers.getContentLength());
+		assertEquals("Body is not a PDF", "%PDF-", new String(result.getBody(), 0, 5, StandardCharsets.ISO_8859_1));
+	}
+
+	@Test
+	public void getPatientIdSticker_shouldSetAttachmentDispositionWhenInlineIsFalse() {
+		Context.setLocale(Locale.ENGLISH);
+		MockHttpServletResponse response = new MockHttpServletResponse();
+
+		ResponseEntity<byte[]> result = patientStickerController.getPatientIdSticker(response, TEST_PATIENT_UUID, false);
+
+		assertEquals(HttpStatus.OK, result.getStatusCode());
+		assertEquals("attachment; filename=\"patientIdSticker.pdf\"",
+		    result.getHeaders().getFirst("Content-Disposition"));
 	}
 
 	@Test

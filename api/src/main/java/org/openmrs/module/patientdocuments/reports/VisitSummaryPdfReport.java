@@ -39,6 +39,7 @@ import org.apache.fop.configuration.DefaultConfigurationBuilder;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.patientdocuments.api.PdfGenerationException;
 import org.openmrs.util.ConfigUtil;
+import org.openmrs.module.patientdocuments.common.Helper;
 import org.openmrs.module.patientdocuments.common.PatientDocumentsConstants;
 import org.openmrs.module.patientdocuments.common.PatientDocumentsPrivilegeConstants;
 import org.openmrs.module.patientdocuments.library.VisitSummaryDataSetDefinition;
@@ -70,8 +71,13 @@ public class VisitSummaryPdfReport {
 	public byte[] generatePdf(String visitUuid)  {
 		Context.requirePrivilege(PatientDocumentsPrivilegeConstants.VIEW_VISIT_SUMMARY);
 
-		// Visit existence is validated by the controller (404) and the evaluator
-		// (returns empty DataSet). No redundant fetch here.
+		// Visit existence is validated by the caller — the REST controller answers 404
+		// before it gets here — so there is no redundant fetch. That check is
+		// load-bearing, not a convenience: the evaluator does return an empty DataSet
+		// for an unresolvable uuid, but the renderer then emits a document with no
+		// sections, the stylesheet turns that into an fo:flow with no children, and FOP
+		// rejects it. See
+		// VisitSummaryPdfAdversarialDataTest#shouldFailCleanlyWhenTheVisitUuidDoesNotResolve.
 		try {
 			ReportData reportData = createReportData(visitUuid);
 			byte[] xmlBytes = renderReportToXml(reportData);
@@ -150,7 +156,7 @@ public class VisitSummaryPdfReport {
 			FopFactory fopFactory = new FopFactoryBuilder(fontBaseUri).setConfiguration(cfg).build();
 			FOUserAgent foUserAgent = fopFactory.newFOUserAgent();
 			Fop fop = fopFactory.newFop(MimeConstants.MIME_PDF, foUserAgent, outStream);
-			TransformerFactory factory = TransformerFactory.newInstance();
+			TransformerFactory factory = Helper.newSecureTransformerFactory();
 			Transformer transformer = factory.newTransformer(xslSource);
 			transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
 			transformer.setOutputProperty(OutputKeys.METHOD, "xml");

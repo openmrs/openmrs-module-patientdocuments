@@ -6,15 +6,23 @@
   <!-- Strict FO validation -->
   <strict-validation>true</strict-validation>
 
-  <!-- Base URL for resolving relative URLs -->
-  <base>.</base>
+  <!--
+    No <base> element on purpose. The base URI is supplied programmatically by
+    FopFactoryBuilder and is the classpath 'fonts/' directory. Setting it here as well
+    sends it through FOP's config parser, which resolves it with URI.resolve() — that
+    silently degrades to a relative URI when the classpath entry is a jar (an opaque
+    jar: URI cannot be resolved against), and FOP then fails with "URI is not absolute".
+    Deployed modules are expanded to a directory so it happens to work there; the test
+    classpath serves the fonts from the api jar, where it does not. Same reason the
+    embed-urls below are bare filenames rather than './'-prefixed.
+  -->
 
   <!-- Font Base URL for resolving relative font URLs -->
   <renderers>
     <renderer mime="application/pdf">
       <!-- Font configuration -->
       <fonts>
-        <font kerning="yes" embed-url="./IBMPlexSansArabic-Regular.ttf">
+        <font kerning="yes" embed-url="IBMPlexSansArabic-Regular.ttf">
           <font-triplet name="IBM Plex Sans Arabic" style="normal" weight="normal"/>
           <font-triplet name="any" style="normal" weight="normal"/>
           <font-triplet name="Helvetica" style="normal" weight="normal"/>
@@ -25,8 +33,11 @@
           <font-triplet name="monospace" style="normal" weight="normal"/>
           <font-triplet name="Courier" style="normal" weight="normal"/>
         </font>
-        <font kerning="yes" embed-url="./IBMPlexSansArabic-Bold.ttf">
+        <font kerning="yes" embed-url="IBMPlexSansArabic-Bold.ttf">
           <font-triplet name="IBM Plex Sans Arabic Bold" style="normal" weight="900"/>
+          <!-- The stylesheets ask for this family at weight bold; without the triplet FOP
+               logs a substitution warning on every render and falls back to the 900 entry. -->
+          <font-triplet name="IBM Plex Sans Arabic Bold" style="normal" weight="bold"/>
           <font-triplet name="IBM Plex Sans Arabic" style="normal" weight="bold"/>
           <font-triplet name="any" style="normal" weight="bold"/>
           <font-triplet name="Helvetica" style="normal" weight="bold"/>

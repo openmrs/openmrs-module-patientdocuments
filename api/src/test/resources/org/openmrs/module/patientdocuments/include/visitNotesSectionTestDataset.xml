@@ -24,6 +24,8 @@
                 under the stock "Unknown" role (falls back to that provider).
     Visit 605 — a note obs with no value_text (placeholder), and a note whose
                 encounter has two clinician-role providers (joined, sorted).
+    Visit 606 — one provider-less encounter carrying three notes, so that per-note
+                work that actually belongs to the encounter is visible.
 -->
 <dataset>
 
@@ -213,5 +215,31 @@
        obs_datetime="2025-06-05 10:00:00.0" value_text="Jointly written team note"
        location_id="1" creator="1" date_created="2025-06-05 00:00:00.0"
        voided="false" uuid="0obs2009-0000-0000-0000-000000020009" status="FINAL"/>
+
+  <!-- ── Visit 606: one provider-less encounter carrying three notes ─────── -->
+  <!-- Provider attribution is a property of the encounter, so all three notes must
+       resolve it once between them rather than once each. -->
+
+  <visit visit_id="606" patient_id="2" visit_type_id="1"
+         date_started="2025-06-06 00:00:00.0"
+         creator="1" date_created="2025-06-06 00:00:00.0" voided="0"
+         uuid="00000606-0606-0606-0606-000000000606"/>
+
+  <encounter encounter_id="609" encounter_type="1" patient_id="2" location_id="1"
+             visit_id="606" encounter_datetime="2025-06-06 09:00:00.0"
+             creator="1" date_created="2025-06-06 00:00:00.0" voided="false"
+             uuid="00000609-enc9-enc9-enc9-000000000609"/>
+  <obs obs_id="20010" person_id="2" concept_id="6001" encounter_id="609"
+       obs_datetime="2025-06-06 09:00:00.0" value_text="First note on the shared encounter"
+       location_id="1" creator="1" date_created="2025-06-06 00:00:00.0"
+       voided="false" uuid="0obs2010-0000-0000-0000-000000020010" status="FINAL"/>
+  <obs obs_id="20011" person_id="2" concept_id="6001" encounter_id="609"
+       obs_datetime="2025-06-06 09:30:00.0" value_text="Second note on the shared encounter"
+       location_id="1" creator="1" date_created="2025-06-06 00:00:00.0"
+       voided="false" uuid="0obs2011-0000-0000-0000-000000020011" status="FINAL"/>
+  <obs obs_id="20012" person_id="2" concept_id="6001" encounter_id="609"
+       obs_datetime="2025-06-06 10:00:00.0" value_text="Third note on the shared encounter"
+       location_id="1" creator="1" date_created="2025-06-06 00:00:00.0"
+       voided="false" uuid="0obs2012-0000-0000-0000-000000020012" status="FINAL"/>
 
 </dataset>

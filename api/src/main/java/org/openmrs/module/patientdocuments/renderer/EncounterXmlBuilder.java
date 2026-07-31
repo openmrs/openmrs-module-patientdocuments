@@ -51,6 +51,17 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 
+/**
+ * Builds the pre-FOP XML for an encounter PDF.
+ * <p>
+ * Deliberately <strong>not</strong> a Spring bean, and it must not become one. Unlike
+ * every other collaborator in this module it carries per-render mutable state —
+ * {@code allFieldIds} and {@code conceptRefUsage}, rebuilt by
+ * {@link #collectFieldIds(List)} for each form it walks. {@code EncounterPdfReportRenderer}
+ * therefore constructs a fresh instance per render. Turning this into a singleton would
+ * let one request's field ids and concept counts decide how another request's obs are
+ * selected, which means one patient's encounter data in another patient's PDF.
+ */
 public class EncounterXmlBuilder {
 
 	private static final String QUESTION_OPTIONS_SECTION = "questionOptions";

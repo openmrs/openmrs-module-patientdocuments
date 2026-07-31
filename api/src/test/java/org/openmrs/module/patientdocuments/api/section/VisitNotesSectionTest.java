@@ -9,6 +9,13 @@
  */
 package org.openmrs.module.patientdocuments.api.section;
 
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.Logger;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.Property;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Integration tests for VisitNotesSection.
@@ -98,6 +106,53 @@ public class VisitNotesSectionTest extends BaseModuleContextSensitiveTest {
 
 		Assertions.assertTrue(notes.stream().noneMatch(n -> "Note in voided encounter".equals(n.getText())),
 		    "Notes hanging off a voided encounter must be excluded");
+	}
+
+	/**
+	 * Provider attribution depends only on the encounter, and one encounter routinely
+	 * carries many notes. Resolving it per note re-emitted the same "no named provider"
+	 * warning once per note, which on a 2000-note visit was roughly 85% of the entire
+	 * render (10.1-11.0s against 1.5-1.8s with the warning suppressed). Counting the
+	 * warnings is the regression guard: three notes on one provider-less encounter is
+	 * one warning, not three.
+	 */
+	@Test
+	public void gatherData_manyNotesOnOneProviderlessEncounter_warnsOncePerEncounterNotPerNote() {
+		Visit visit = Context.getVisitService().getVisit(606);
+		Logger logger = (Logger) LogManager.getLogger(VisitNotesSection.class);
+		List<String> warnings = new CopyOnWriteArrayList<>();
+		Appender collector = new AbstractAppender("visitNotesWarningCollector", null, null, true,
+		        Property.EMPTY_ARRAY) {
+
+			@Override
+			public void append(LogEvent event) {
+				if (event.getLevel().isMoreSpecificThan(Level.WARN)) {
+					warnings.add(event.getMessage().getFormattedMessage());
+				}
+			}
+		};
+		collector.start();
+		Level originalLevel = logger.getLevel();
+		logger.addAppender(collector);
+		logger.setLevel(Level.WARN);
+		List<VisitNoteEntry> notes;
+		try {
+			notes = section.gatherData(visit);
+		}
+		finally {
+			logger.removeAppender(collector);
+			logger.setLevel(originalLevel);
+			collector.stop();
+		}
+
+		Assertions.assertEquals(3, notes.size(), "All three notes on the encounter must render");
+		for (VisitNoteEntry note : notes) {
+			Assertions.assertEquals("Unknown", note.getProvider(),
+			    "Every note on a provider-less encounter still renders the Unknown fallback");
+		}
+		long providerWarnings = warnings.stream().filter(m -> m.contains("has no named provider")).count();
+		Assertions.assertEquals(1, providerWarnings,
+		    "One provider-less encounter must warn once, not once per note it carries; got: " + warnings);
 	}
 
 	@Test

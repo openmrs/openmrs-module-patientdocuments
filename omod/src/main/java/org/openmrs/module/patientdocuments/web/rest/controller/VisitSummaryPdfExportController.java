@@ -15,20 +15,27 @@ import static org.openmrs.module.patientdocuments.common.PatientDocumentsConstan
 import org.openmrs.Visit;
 import org.openmrs.api.APIAuthenticationException;
 import org.openmrs.api.context.Context;
+import org.openmrs.api.context.ContextAuthenticationException;
 import org.openmrs.module.patientdocuments.reports.VisitSummaryPdfReport;
+import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.module.webservices.rest.web.RestConstants;
+import org.openmrs.module.webservices.rest.web.RestUtil;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.TypeMismatchException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.ServletRequestBindingException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 /**
  * REST controller that exposes a PDF export endpoint for visit summaries.
@@ -63,7 +70,16 @@ public class VisitSummaryPdfExportController extends BaseRestController {
 
 			return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
 		}
-		catch (APIAuthenticationException e) {
+		// ContextAuthenticationException is the one that actually fires today:
+		// VisitSummaryPdfReport denies via Context.requirePrivilege, and
+		// ContextAuthenticationException extends APIException, NOT
+		// APIAuthenticationException — so catching only the latter turned a denial
+		// into a 500. APIAuthenticationException is kept as the belt-and-braces arm
+		// for the service-layer authorization advice; it is currently unreachable
+		// from generatePdf (which wraps everything after the privilege check in
+		// PdfGenerationException), but it costs nothing and stops the bug from
+		// coming back if that wrapping ever moves.
+		catch (APIAuthenticationException | ContextAuthenticationException e) {
 			logger.warn("Privilege check failed for visit summary PDF request: {}", e.getMessage());
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).contentType(MediaType.TEXT_PLAIN)
 			        .body("Access denied".getBytes());
@@ -86,5 +102,25 @@ public class VisitSummaryPdfExportController extends BaseRestController {
 		}
 
 		return writeResponse(visitUuid, inline);
+	}
+
+	/**
+	 * A malformed request is the caller's fault, not the server's.
+	 * <p>
+	 * Without this, a missing {@code visitUuid} or a non-boolean {@code inline} reaches
+	 * {@code BaseRestController}'s catch-all {@code @ExceptionHandler(Exception.class)},
+	 * which wins over Spring's {@code DefaultHandlerExceptionResolver} and answers 500.
+	 * <p>
+	 * The body is a {@link SimpleObject} in the standard REST error shape, not the
+	 * {@code byte[]} the success path uses: the deployed
+	 * {@code ExceptionHandlerExceptionResolver} carries a narrower set of message
+	 * converters than the handler adapter, and a {@code byte[]} body fails to write there
+	 * with {@code HttpMessageNotWritableException} — which turns straight back into a 500.
+	 */
+	@ExceptionHandler({ ServletRequestBindingException.class, TypeMismatchException.class })
+	@ResponseBody
+	public ResponseEntity<SimpleObject> handleBadRequest(Exception e) {
+		logger.warn("Rejecting malformed visit summary PDF request: {}", e.getMessage());
+		return new ResponseEntity<>(RestUtil.wrapErrorResponse(e, ""), HttpStatus.BAD_REQUEST);
 	}
 }

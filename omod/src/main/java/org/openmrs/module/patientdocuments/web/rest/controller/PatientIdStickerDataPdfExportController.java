@@ -15,7 +15,9 @@ import static org.openmrs.module.patientdocuments.common.PatientDocumentsConstan
 import javax.servlet.http.HttpServletResponse;
 
 import org.openmrs.Patient;
+import org.openmrs.api.APIAuthenticationException;
 import org.openmrs.api.PatientService;
+import org.openmrs.api.context.ContextAuthenticationException;
 import org.openmrs.module.patientdocuments.reports.PatientIdStickerPdfReport;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
@@ -60,6 +62,15 @@ public class PatientIdStickerDataPdfExportController extends BaseRestController 
 			headers.setContentLength(pdfBytes.length);
 			
 			return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+		}
+		// Same defect the visit summary endpoint had: PatientIdStickerPdfReport denies via
+		// Context.requirePrivilege, which throws ContextAuthenticationException. That extends
+		// APIException, not APIAuthenticationException, so without this arm a privilege denial
+		// fell through to the generic handler and came back as 500 instead of 403.
+		catch (APIAuthenticationException | ContextAuthenticationException e) {
+			logger.warn("Privilege check failed for patient ID sticker PDF request: {}", e.getMessage());
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).contentType(MediaType.TEXT_PLAIN)
+			        .body("Access denied".getBytes());
 		}
 		catch (Exception e) {
 			logger.error("An error occurred while processing the request", e);

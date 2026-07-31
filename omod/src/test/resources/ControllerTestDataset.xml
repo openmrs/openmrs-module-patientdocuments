@@ -10,4 +10,17 @@
 
 	<patient_identifier patient_identifier_id="100001" patient_id="100001" identifier="100001" identifier_type="2" preferred="1" creator="1" uuid="E866EE0E-528D-48C3-AC5B-9D1128B9683C" date_created="2020-01-21 00:00:00.0" voided="0"/>
 
+	<!--
+	    Privilege fixture for the 403 test: gives the stock non-superuser "butch"
+	    (user 502 in standardTestDataset) "Get Patients" so the patient lookup still
+	    succeeds, but NOT "App: Can generate a Patient Identity Sticker".
+	-->
+	<privilege privilege="Get Patients" description="Able to get patients" uuid="100001pri-0001-0001-0001-000000100001"/>
+
+	<role role="Patient Reader No Sticker" description="Can read patients but cannot print ID stickers" uuid="100001rol-0001-0001-0001-000000100001"/>
+
+	<role_privilege role="Patient Reader No Sticker" privilege="Get Patients"/>
+
+	<user_role user_id="502" role="Patient Reader No Sticker"/>
+
 </dataset>

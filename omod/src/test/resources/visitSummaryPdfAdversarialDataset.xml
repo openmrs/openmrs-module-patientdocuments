@@ -1,0 +1,146 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+    Adversarial companion to visitSummaryPdfControllerTestDataset.xml.
+
+    The end-to-end tests next door run one curated, well-formed visit. This file
+    supplies the shapes a real deployment produces that a curated fixture never
+    does, so the pipeline can be shown to either render them or fail cleanly
+    rather than throwing or emitting a corrupt PDF:
+
+      Visit 9003 (patient 90003) — an encounter that carries no obs at all.
+        Distinct from visit 9002 next door, which has no encounter either: the
+        sections branch on "no encounters" long before they branch on "no data",
+        so the second branch was never reached.
+
+      Visit 9004 (patient 90004) — pathological values on a normal-looking visit:
+        - a vitals obs with NO recorded value (obs rows can be valueless in the
+          wild; the API validator will not create one, so it is inserted here)
+        - numeric boundaries: zero, negative, and a value far outside any range
+        - a visit note of ~20 000 characters with no whitespace-friendly breaks
+        - a visit note in Arabic and one in Chinese (the bundled IBM Plex Sans
+          Arabic has no CJK coverage, so the Chinese note is the interesting one)
+        - a patient name and facility address in non-Latin script
+
+    IDs continue the 9003+/91100+ ranges used by the sibling dataset.
+-->
+<dataset>
+
+  <!-- ══ Patients ═════════════════════════════════════════════════════════ -->
+
+  <person person_id="90003" gender="F" birthdate="2000-02-29" dead="0" voided="0"
+          creator="1" date_created="2025-01-01 00:00:00.0"
+          uuid="90003per-0003-0003-0003-000000090003"/>
+  <person_name person_name_id="90003" person_id="90003" preferred="true"
+               given_name="Obsless" family_name="Encounter"
+               creator="1" date_created="2025-01-01 00:00:00.0" voided="false"
+               uuid="90003pnm-0003-0003-0003-000000090003"/>
+  <patient patient_id="90003" creator="1" date_created="2025-01-01 00:00:00.0" voided="0"/>
+  <patient_identifier patient_identifier_id="90003" patient_id="90003"
+                      identifier="VS-90003" identifier_type="2" preferred="1"
+                      creator="1" date_created="2025-01-01 00:00:00.0" voided="0"
+                      uuid="90003pid-0003-0003-0003-000000090003"/>
+
+  <!-- Arabic given name, Chinese family name: both must reach the PDF or be
+       shown to be lost, and the Chinese one has no glyph in the bundled font. -->
+  <person person_id="90004" gender="M" birthdate="1955-12-31" dead="0" voided="0"
+          creator="1" date_created="2025-01-01 00:00:00.0"
+          uuid="90004per-0004-0004-0004-000000090004"/>
+  <person_name person_name_id="90004" person_id="90004" preferred="true"
+               given_name="مريض" middle_name="Adversarial" family_name="张伟"
+               creator="1" date_created="2025-01-01 00:00:00.0" voided="false"
+               uuid="90004pnm-0004-0004-0004-000000090004"/>
+  <patient patient_id="90004" creator="1" date_created="2025-01-01 00:00:00.0" voided="0"/>
+  <patient_identifier patient_identifier_id="90004" patient_id="90004"
+                      identifier="VS-90004" identifier_type="2" preferred="1"
+                      creator="1" date_created="2025-01-01 00:00:00.0" voided="0"
+                      uuid="90004pid-0004-0004-0004-000000090004"/>
+
+  <!-- ══ Facility with a non-Latin address ════════════════════════════════ -->
+
+  <location location_id="9003" name="مستشفى الكرامة"
+            description="Facility with a non-Latin name and address"
+            address1="شارع المستشفى 12" city_village="القاهرة"
+            state_province="القاهرة" country="مصر" postal_code="11511"
+            creator="1" date_created="2025-01-01 00:00:00.0" retired="false"
+            uuid="90003loc-0003-0003-0003-000000090003"/>
+
+  <!-- ══ Visit 9003 — an encounter that carries no obs ════════════════════ -->
+
+  <visit visit_id="9003" patient_id="90003" visit_type_id="1" location_id="9003"
+         date_started="2025-06-01 08:00:00.0"
+         creator="1" date_created="2025-06-01 00:00:00.0" voided="0"
+         uuid="90003vst-0003-0003-0003-000000090003"/>
+
+  <encounter encounter_id="9003" encounter_type="1" patient_id="90003" location_id="9003"
+             visit_id="9003" encounter_datetime="2025-06-01 09:00:00.0"
+             creator="1" date_created="2025-06-01 00:00:00.0" voided="false"
+             uuid="90003enc-0003-0003-0003-000000090003"/>
+
+  <!-- ══ Visit 9004 — pathological values ═════════════════════════════════ -->
+
+  <visit visit_id="9004" patient_id="90004" visit_type_id="1" location_id="9003"
+         date_started="2025-06-02 08:00:00.0"
+         creator="1" date_created="2025-06-02 00:00:00.0" voided="0"
+         uuid="90004vst-0004-0004-0004-000000090004"/>
+
+  <encounter encounter_id="9004" encounter_type="1" patient_id="90004" location_id="9003"
+             visit_id="9004" encounter_datetime="2025-06-02 09:00:00.0"
+             creator="1" date_created="2025-06-02 00:00:00.0" voided="false"
+             uuid="90004enc-0004-0004-0004-000000090004"/>
+  <encounter_provider encounter_provider_id="9004" encounter_id="9004" provider_id="9001"
+             encounter_role_id="9001" creator="1" date_created="2025-06-02 00:00:00.0"
+             voided="false" uuid="90004epr-0004-0004-0004-000000090004"/>
+
+  <!-- Systolic BP with NO recorded value. ObsValidator rejects this, so it can
+       only be created underneath the API — which is exactly how such rows get
+       into a real database (direct SQL, a bad migration, a voided-value edit). -->
+  <obs obs_id="91100" person_id="90004" concept_id="91001" encounter_id="9004"
+       obs_datetime="2025-06-02 09:05:00.0"
+       location_id="9003" creator="1" date_created="2025-06-02 00:00:00.0"
+       voided="false" status="FINAL" uuid="91100obs-0100-0100-0100-000000091100"/>
+
+  <!-- Diastolic present, so the BP pair is half-populated -->
+  <obs obs_id="91101" person_id="90004" concept_id="91002" encounter_id="9004"
+       obs_datetime="2025-06-02 09:05:00.0" value_numeric="0.0"
+       location_id="9003" creator="1" date_created="2025-06-02 00:00:00.0"
+       voided="false" status="FINAL" uuid="91101obs-0101-0101-0101-000000091101"/>
+
+  <!-- Heart rate: negative -->
+  <obs obs_id="91102" person_id="90004" concept_id="91003" encounter_id="9004"
+       obs_datetime="2025-06-02 09:05:00.0" value_numeric="-42.0"
+       location_id="9003" creator="1" date_created="2025-06-02 00:00:00.0"
+       voided="false" status="FINAL" uuid="91102obs-0102-0102-0102-000000091102"/>
+
+  <!-- Lab: far outside the 4-7 reference range, and a second one at zero -->
+  <obs obs_id="91110" person_id="90004" concept_id="91010" encounter_id="9004"
+       obs_datetime="2025-06-02 09:30:00.0" value_numeric="99999999.999"
+       interpretation="HIGH"
+       location_id="9003" creator="1" date_created="2025-06-02 00:00:00.0"
+       voided="false" status="FINAL" uuid="91110obs-0110-0110-0110-000000091110"/>
+  <obs obs_id="91111" person_id="90004" concept_id="91010" encounter_id="9004"
+       obs_datetime="2025-06-02 09:31:00.0" value_numeric="0.00004"
+       interpretation="LOW"
+       location_id="9003" creator="1" date_created="2025-06-02 00:00:00.0"
+       voided="false" status="FINAL" uuid="91111obs-0111-0111-0111-000000091111"/>
+
+  <!-- Visit note in Arabic -->
+  <obs obs_id="91120" person_id="90004" concept_id="91020" encounter_id="9004"
+       obs_datetime="2025-06-02 09:40:00.0"
+       value_text="أحيل المريض إلى العيادة الخارجية للمتابعة."
+       location_id="9003" creator="1" date_created="2025-06-02 00:00:00.0"
+       voided="false" status="FINAL" uuid="91120obs-0120-0120-0120-000000091120"/>
+
+  <!-- Visit note in Chinese: the bundled font has no CJK coverage -->
+  <obs obs_id="91121" person_id="90004" concept_id="91020" encounter_id="9004"
+       obs_datetime="2025-06-02 09:41:00.0"
+       value_text="患者转诊至门诊随访。"
+       location_id="9003" creator="1" date_created="2025-06-02 00:00:00.0"
+       voided="false" status="FINAL" uuid="91121obs-0121-0121-0121-000000091121"/>
+
+  <!-- Visit note with no text at all -->
+  <obs obs_id="91122" person_id="90004" concept_id="91020" encounter_id="9004"
+       obs_datetime="2025-06-02 09:42:00.0" value_text=""
+       location_id="9003" creator="1" date_created="2025-06-02 00:00:00.0"
+       voided="false" status="FINAL" uuid="91122obs-0122-0122-0122-000000091122"/>
+
+</dataset>

@@ -15,6 +15,7 @@ import static org.openmrs.module.patientdocuments.common.PatientDocumentsConstan
 import org.openmrs.Visit;
 import org.openmrs.api.APIAuthenticationException;
 import org.openmrs.api.context.Context;
+import org.openmrs.api.context.ContextAuthenticationException;
 import org.openmrs.module.patientdocuments.reports.VisitSummaryPdfReport;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
@@ -63,7 +64,12 @@ public class VisitSummaryPdfExportController extends BaseRestController {
 
 			return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
 		}
-		catch (APIAuthenticationException e) {
+		// Both are thrown for a missing privilege and neither extends the other:
+		// the service-layer authorization advice throws APIAuthenticationException,
+		// while Context.requirePrivilege (used by VisitSummaryPdfReport) throws
+		// ContextAuthenticationException. Catching only the first turned a denial
+		// into a 500.
+		catch (APIAuthenticationException | ContextAuthenticationException e) {
 			logger.warn("Privilege check failed for visit summary PDF request: {}", e.getMessage());
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).contentType(MediaType.TEXT_PLAIN)
 			        .body("Access denied".getBytes());

@@ -1,0 +1,363 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+    Test dataset for VisitSummaryPdfExportControllerTest.
+
+    Drives the whole visit-summary pipeline end to end: REST controller -> report ->
+    dataset evaluator -> section SPI -> XML renderer -> XSL-FO -> PDF bytes. Every
+    section that ships with the module contributes data for visit 9001, so the
+    generated PDF can be text-extracted and asserted against.
+
+    IDs are deliberately high (90001+/91001+) so nothing collides with
+    standardTestDataset (max concept_id 5497) or with the api-module section datasets.
+
+    Concept classes come from standardTestDataset:
+      1 = Test (lab), 3 = Drug, 4 = Diagnosis, 5 = Finding (vitals), 11 = Misc,
+      19 = Frequency
+    Concept datatypes: 1 = Numeric, 3 = Text, 4 = N/A.
+
+    Patient 90001 "Mercy Aine Nakato" — the fully-populated patient:
+      Visit 9001 at "Kayunga Health Centre III", one encounter, and
+        vitals      : systolic 128 / diastolic 84 (combined), heart rate 76 bpm
+        labResults  : Glucose 9.5 mmol/L, interpretation HIGH, normals 4-7
+        visitNotes  : one note obs attributed to a Clinician-role provider
+        diagnoses   : Malaria, CONFIRMED, rank 1
+        conditions  : Type 2 Diabetes Mellitus, ACTIVE, onset 2023-02-01
+        allergies   : Penicillin, Severe, reaction Rash
+        medications : active drug order for Lisinopril 5 mg Oral Twice daily, 10 days
+
+    Patient 90002 "Silent Empty Kirya" — the empty-visit edge case:
+      Visit 9002 has no location, no encounters, and the patient has no allergies,
+      conditions or drug orders, so every data section must fall through to its
+      "None recorded" empty state and the PDF must still render.
+
+    The role/privilege rows below give the stock (non-superuser) "butch" user the
+    "Get Visits" privilege but NOT "App: Can generate a Visit Summary", so the
+    privilege-denied path can be exercised with a real user rather than a mock.
+-->
+<dataset>
+
+  <!-- ══ Privilege fixture for the 403 test ═══════════════════════════════ -->
+
+  <privilege privilege="Get Visits" description="Able to get visits"
+             uuid="90001pri-0001-0001-0001-000000090001"/>
+
+  <role role="Visit Reader No Summary" description="Can read visits but cannot print visit summaries"
+        uuid="90001rol-0001-0001-0001-000000090001"/>
+
+  <role_privilege role="Visit Reader No Summary" privilege="Get Visits"/>
+
+  <!-- user 502 = "butch" from standardTestDataset (not retired, not a superuser) -->
+  <user_role user_id="502" role="Visit Reader No Summary"/>
+
+  <!-- ══ Facility ═════════════════════════════════════════════════════════ -->
+
+  <location location_id="9001" name="Kayunga Health Centre III"
+            description="Facility used by the visit summary end-to-end test"
+            address1="Plot 5 Bugerere Road" city_village="Kayunga"
+            state_province="Central" country="Uganda" postal_code="10101"
+            creator="1" date_created="2025-01-01 00:00:00.0" retired="false"
+            uuid="90001loc-0001-0001-0001-000000090001"/>
+
+  <!-- ══ Patients ═════════════════════════════════════════════════════════ -->
+
+  <person person_id="90001" gender="F" birthdate="1990-04-12" dead="0" voided="0"
+          creator="1" date_created="2025-01-01 00:00:00.0"
+          uuid="90001per-0001-0001-0001-000000090001"/>
+  <person_name person_name_id="90001" person_id="90001" preferred="true"
+               given_name="Mercy" middle_name="Aine" family_name="Nakato"
+               creator="1" date_created="2025-01-01 00:00:00.0" voided="false"
+               uuid="90001pnm-0001-0001-0001-000000090001"/>
+  <patient patient_id="90001" creator="1" date_created="2025-01-01 00:00:00.0" voided="0"/>
+  <patient_identifier patient_identifier_id="90001" patient_id="90001"
+                      identifier="VS-90001" identifier_type="2" preferred="1"
+                      creator="1" date_created="2025-01-01 00:00:00.0" voided="0"
+                      uuid="90001pid-0001-0001-0001-000000090001"/>
+
+  <person person_id="90002" gender="M" birthdate="1980-01-01" dead="0" voided="0"
+          creator="1" date_created="2025-01-01 00:00:00.0"
+          uuid="90002per-0002-0002-0002-000000090002"/>
+  <person_name person_name_id="90002" person_id="90002" preferred="true"
+               given_name="Silent" middle_name="Empty" family_name="Kirya"
+               creator="1" date_created="2025-01-01 00:00:00.0" voided="false"
+               uuid="90002pnm-0002-0002-0002-000000090002"/>
+  <patient patient_id="90002" creator="1" date_created="2025-01-01 00:00:00.0" voided="0"/>
+  <patient_identifier patient_identifier_id="90002" patient_id="90002"
+                      identifier="VS-90002" identifier_type="2" preferred="1"
+                      creator="1" date_created="2025-01-01 00:00:00.0" voided="0"
+                      uuid="90002pid-0002-0002-0002-000000090002"/>
+
+  <!-- ══ Concept reference source (CIEL) ══════════════════════════════════ -->
+
+  <concept_reference_source concept_source_id="10" name="CIEL"
+      description="Columbia International eHealth Laboratory" hl7_code="CIEL"
+      creator="1" date_created="2025-01-01 00:00:00.0" retired="false"
+      uuid="ciel0000-0000-0000-0000-000000000010"/>
+
+  <!-- ══ Vitals concepts (class 5 = Finding, so labResults never claims them) ══ -->
+
+  <concept concept_id="91001" retired="false" datatype_id="1" class_id="5" is_set="false"
+           creator="1" date_created="2025-01-01 00:00:00.0"
+           uuid="91001con-0001-0001-0001-000000091001"/>
+  <concept_name concept_name_id="91001" concept_id="91001" name="Systolic BP" locale="en"
+                creator="1" date_created="2025-01-01 00:00:00.0" voided="false"
+                concept_name_type="FULLY_SPECIFIED" locale_preferred="1"
+                uuid="91001cnm-0001-0001-0001-000000091001"/>
+
+  <concept concept_id="91002" retired="false" datatype_id="1" class_id="5" is_set="false"
+           creator="1" date_created="2025-01-01 00:00:00.0"
+           uuid="91002con-0002-0002-0002-000000091002"/>
+  <concept_name concept_name_id="91002" concept_id="91002" name="Diastolic BP" locale="en"
+                creator="1" date_created="2025-01-01 00:00:00.0" voided="false"
+                concept_name_type="FULLY_SPECIFIED" locale_preferred="1"
+                uuid="91002cnm-0002-0002-0002-000000091002"/>
+
+  <concept concept_id="91003" retired="false" datatype_id="1" class_id="5" is_set="false"
+           creator="1" date_created="2025-01-01 00:00:00.0"
+           uuid="91003con-0003-0003-0003-000000091003"/>
+  <concept_name concept_name_id="91003" concept_id="91003" name="Heart Rate" locale="en"
+                creator="1" date_created="2025-01-01 00:00:00.0" voided="false"
+                concept_name_type="FULLY_SPECIFIED" locale_preferred="1"
+                uuid="91003cnm-0003-0003-0003-000000091003"/>
+
+  <concept_numeric concept_id="91001" units="mmHg" allow_decimal="true"/>
+  <concept_numeric concept_id="91002" units="mmHg" allow_decimal="true"/>
+  <concept_numeric concept_id="91003" units="bpm" allow_decimal="false"/>
+
+  <!-- ══ Lab concept (class 1 = Test) ═════════════════════════════════════ -->
+
+  <concept concept_id="91010" retired="false" datatype_id="1" class_id="1" is_set="false"
+           creator="1" date_created="2025-01-01 00:00:00.0"
+           uuid="91010con-0010-0010-0010-000000091010"/>
+  <concept_name concept_name_id="91010" concept_id="91010" name="Serum Glucose" locale="en"
+                creator="1" date_created="2025-01-01 00:00:00.0" voided="false"
+                concept_name_type="FULLY_SPECIFIED" locale_preferred="1"
+                uuid="91010cnm-0010-0010-0010-000000091010"/>
+  <concept_numeric concept_id="91010" units="mmol/L" low_normal="4.0" hi_normal="7.0"
+                   allow_decimal="true"/>
+
+  <!-- ══ Visit-note concept (class 11 = Misc, so it is not read as a lab) ══ -->
+
+  <concept concept_id="91020" retired="false" datatype_id="3" class_id="11" is_set="false"
+           creator="1" date_created="2025-01-01 00:00:00.0"
+           uuid="91020con-0020-0020-0020-000000091020"/>
+  <concept_name concept_name_id="91020" concept_id="91020" name="Text of encounter note"
+                locale="en" creator="1" date_created="2025-01-01 00:00:00.0" voided="false"
+                concept_name_type="FULLY_SPECIFIED" locale_preferred="1"
+                uuid="91020cnm-0020-0020-0020-000000091020"/>
+
+  <!-- ══ Diagnosis / condition / allergy / medication concepts ════════════ -->
+
+  <concept concept_id="91030" retired="false" datatype_id="4" class_id="4" is_set="false"
+           creator="1" date_created="2025-01-01 00:00:00.0"
+           uuid="91030con-0030-0030-0030-000000091030"/>
+  <concept_name concept_name_id="91030" concept_id="91030" name="Malaria" locale="en"
+                creator="1" date_created="2025-01-01 00:00:00.0" voided="false"
+                concept_name_type="FULLY_SPECIFIED" locale_preferred="1"
+                uuid="91030cnm-0030-0030-0030-000000091030"/>
+
+  <concept concept_id="91040" retired="false" datatype_id="4" class_id="4" is_set="false"
+           creator="1" date_created="2025-01-01 00:00:00.0"
+           uuid="91040con-0040-0040-0040-000000091040"/>
+  <concept_name concept_name_id="91040" concept_id="91040" name="Type 2 Diabetes Mellitus"
+                locale="en" creator="1" date_created="2025-01-01 00:00:00.0" voided="false"
+                concept_name_type="FULLY_SPECIFIED" locale_preferred="1"
+                uuid="91040cnm-0040-0040-0040-000000091040"/>
+
+  <concept concept_id="91050" retired="false" datatype_id="4" class_id="11" is_set="false"
+           creator="1" date_created="2025-01-01 00:00:00.0"
+           uuid="91050con-0050-0050-0050-000000091050"/>
+  <concept_name concept_name_id="91050" concept_id="91050" name="Penicillin" locale="en"
+                creator="1" date_created="2025-01-01 00:00:00.0" voided="false"
+                concept_name_type="FULLY_SPECIFIED" locale_preferred="1"
+                uuid="91050cnm-0050-0050-0050-000000091050"/>
+
+  <concept concept_id="91051" retired="false" datatype_id="4" class_id="11" is_set="false"
+           creator="1" date_created="2025-01-01 00:00:00.0"
+           uuid="91051con-0051-0051-0051-000000091051"/>
+  <concept_name concept_name_id="91051" concept_id="91051" name="Severe" locale="en"
+                creator="1" date_created="2025-01-01 00:00:00.0" voided="false"
+                concept_name_type="FULLY_SPECIFIED" locale_preferred="1"
+                uuid="91051cnm-0051-0051-0051-000000091051"/>
+
+  <concept concept_id="91052" retired="false" datatype_id="4" class_id="11" is_set="false"
+           creator="1" date_created="2025-01-01 00:00:00.0"
+           uuid="91052con-0052-0052-0052-000000091052"/>
+  <concept_name concept_name_id="91052" concept_id="91052" name="Rash" locale="en"
+                creator="1" date_created="2025-01-01 00:00:00.0" voided="false"
+                concept_name_type="FULLY_SPECIFIED" locale_preferred="1"
+                uuid="91052cnm-0052-0052-0052-000000091052"/>
+
+  <concept concept_id="91060" retired="false" datatype_id="4" class_id="3" is_set="false"
+           creator="1" date_created="2025-01-01 00:00:00.0"
+           uuid="91060con-0060-0060-0060-000000091060"/>
+  <concept_name concept_name_id="91060" concept_id="91060" name="Lisinopril" locale="en"
+                creator="1" date_created="2025-01-01 00:00:00.0" voided="false"
+                concept_name_type="FULLY_SPECIFIED" locale_preferred="1"
+                uuid="91060cnm-0060-0060-0060-000000091060"/>
+
+  <!-- Dose units -->
+  <concept concept_id="91061" retired="false" datatype_id="3" class_id="11" is_set="false"
+           creator="1" date_created="2025-01-01 00:00:00.0"
+           uuid="91061con-0061-0061-0061-000000091061"/>
+  <concept_name concept_name_id="91061" concept_id="91061" name="mg" locale="en"
+                creator="1" date_created="2025-01-01 00:00:00.0" voided="false"
+                concept_name_type="FULLY_SPECIFIED" locale_preferred="1"
+                uuid="91061cnm-0061-0061-0061-000000091061"/>
+
+  <!-- Route -->
+  <concept concept_id="91062" retired="false" datatype_id="4" class_id="11" is_set="false"
+           creator="1" date_created="2025-01-01 00:00:00.0"
+           uuid="91062con-0062-0062-0062-000000091062"/>
+  <concept_name concept_name_id="91062" concept_id="91062" name="Oral" locale="en"
+                creator="1" date_created="2025-01-01 00:00:00.0" voided="false"
+                concept_name_type="FULLY_SPECIFIED" locale_preferred="1"
+                uuid="91062cnm-0062-0062-0062-000000091062"/>
+
+  <!-- Frequency -->
+  <concept concept_id="91063" retired="false" datatype_id="4" class_id="19" is_set="false"
+           creator="1" date_created="2025-01-01 00:00:00.0"
+           uuid="91063con-0063-0063-0063-000000091063"/>
+  <concept_name concept_name_id="91063" concept_id="91063" name="Twice daily" locale="en"
+                creator="1" date_created="2025-01-01 00:00:00.0" voided="false"
+                concept_name_type="FULLY_SPECIFIED" locale_preferred="1"
+                uuid="91063cnm-0063-0063-0063-000000091063"/>
+
+  <!-- Duration units -->
+  <concept concept_id="91064" retired="false" datatype_id="4" class_id="11" is_set="false"
+           creator="1" date_created="2025-01-01 00:00:00.0"
+           uuid="91064con-0064-0064-0064-000000091064"/>
+  <concept_name concept_name_id="91064" concept_id="91064" name="days" locale="en"
+                creator="1" date_created="2025-01-01 00:00:00.0" voided="false"
+                concept_name_type="FULLY_SPECIFIED" locale_preferred="1"
+                uuid="91064cnm-0064-0064-0064-000000091064"/>
+
+  <!-- ══ CIEL reference terms and maps ════════════════════════════════════ -->
+
+  <concept_reference_term concept_reference_term_id="9100" concept_source_id="10"
+      code="5085" name="Systolic blood pressure" retired="0"
+      creator="1" date_created="2025-01-01 00:00:00.0" uuid="ciel-term-e2e-5085"/>
+  <concept_reference_term concept_reference_term_id="9101" concept_source_id="10"
+      code="5086" name="Diastolic blood pressure" retired="0"
+      creator="1" date_created="2025-01-01 00:00:00.0" uuid="ciel-term-e2e-5086"/>
+  <concept_reference_term concept_reference_term_id="9102" concept_source_id="10"
+      code="5087" name="Pulse" retired="0"
+      creator="1" date_created="2025-01-01 00:00:00.0" uuid="ciel-term-e2e-5087"/>
+  <concept_reference_term concept_reference_term_id="9103" concept_source_id="10"
+      code="162169" name="Text of encounter note" retired="0"
+      creator="1" date_created="2025-01-01 00:00:00.0" uuid="ciel-term-e2e-162169"/>
+
+  <concept_reference_map concept_map_id="9100" concept_id="91001"
+      concept_reference_term_id="9100" concept_map_type_id="2"
+      creator="1" date_created="2025-01-01 00:00:00.0" uuid="cmap-e2e-91001-5085"/>
+  <concept_reference_map concept_map_id="9101" concept_id="91002"
+      concept_reference_term_id="9101" concept_map_type_id="2"
+      creator="1" date_created="2025-01-01 00:00:00.0" uuid="cmap-e2e-91002-5086"/>
+  <concept_reference_map concept_map_id="9102" concept_id="91003"
+      concept_reference_term_id="9102" concept_map_type_id="2"
+      creator="1" date_created="2025-01-01 00:00:00.0" uuid="cmap-e2e-91003-5087"/>
+  <concept_reference_map concept_map_id="9103" concept_id="91020"
+      concept_reference_term_id="9103" concept_map_type_id="2"
+      creator="1" date_created="2025-01-01 00:00:00.0" uuid="cmap-e2e-91020-162169"/>
+
+  <!-- ══ Clinician role and provider for the visit note ═══════════════════ -->
+
+  <encounter_role encounter_role_id="9001" name="Clinician"
+      description="Clinician role for the visit summary end-to-end test"
+      creator="1" date_created="2025-01-01 00:00:00.0" retired="false"
+      uuid="90001erl-0001-0001-0001-000000090001"/>
+
+  <!-- person 502 = "Hippocrates of Cos" from standardTestDataset -->
+  <provider provider_id="9001" person_id="502" identifier="PROV-9001"
+      creator="1" date_created="2025-01-01 00:00:00.0" retired="false"
+      uuid="90001prv-0001-0001-0001-000000090001"/>
+
+  <!-- ══ Visit 9001 — the fully-populated visit ═══════════════════════════ -->
+
+  <visit visit_id="9001" patient_id="90001" visit_type_id="1" location_id="9001"
+         date_started="2025-05-20 08:00:00.0"
+         creator="1" date_created="2025-05-20 00:00:00.0" voided="0"
+         uuid="90001vst-0001-0001-0001-000000090001"/>
+
+  <encounter encounter_id="9001" encounter_type="1" patient_id="90001" location_id="9001"
+             visit_id="9001" encounter_datetime="2025-05-20 09:00:00.0"
+             creator="1" date_created="2025-05-20 00:00:00.0" voided="false"
+             uuid="90001enc-0001-0001-0001-000000090001"/>
+  <encounter_provider encounter_provider_id="9001" encounter_id="9001" provider_id="9001"
+             encounter_role_id="9001" creator="1" date_created="2025-05-20 00:00:00.0"
+             voided="false" uuid="90001epr-0001-0001-0001-000000090001"/>
+
+  <!-- Vitals obs -->
+  <obs obs_id="91001" person_id="90001" concept_id="91001" encounter_id="9001"
+       obs_datetime="2025-05-20 09:05:00.0" value_numeric="128.0"
+       location_id="9001" creator="1" date_created="2025-05-20 00:00:00.0"
+       voided="false" status="FINAL" uuid="91001obs-0001-0001-0001-000000091001"/>
+  <obs obs_id="91002" person_id="90001" concept_id="91002" encounter_id="9001"
+       obs_datetime="2025-05-20 09:05:00.0" value_numeric="84.0"
+       location_id="9001" creator="1" date_created="2025-05-20 00:00:00.0"
+       voided="false" status="FINAL" uuid="91002obs-0002-0002-0002-000000091002"/>
+  <obs obs_id="91003" person_id="90001" concept_id="91003" encounter_id="9001"
+       obs_datetime="2025-05-20 09:05:00.0" value_numeric="76.0"
+       location_id="9001" creator="1" date_created="2025-05-20 00:00:00.0"
+       voided="false" status="FINAL" uuid="91003obs-0003-0003-0003-000000091003"/>
+
+  <!-- Lab obs — flagged HIGH, normals 4-7 mmol/L -->
+  <obs obs_id="91010" person_id="90001" concept_id="91010" encounter_id="9001"
+       obs_datetime="2025-05-20 09:30:00.0" value_numeric="9.5" interpretation="HIGH"
+       location_id="9001" creator="1" date_created="2025-05-20 00:00:00.0"
+       voided="false" status="FINAL" uuid="91010obs-0010-0010-0010-000000091010"/>
+
+  <!-- Visit note obs -->
+  <obs obs_id="91020" person_id="90001" concept_id="91020" encounter_id="9001"
+       obs_datetime="2025-05-20 09:45:00.0"
+       value_text="Referred onward for antimalarial therapy."
+       location_id="9001" creator="1" date_created="2025-05-20 00:00:00.0"
+       voided="false" status="FINAL" uuid="91020obs-0020-0020-0020-000000091020"/>
+
+  <!-- Diagnosis -->
+  <encounter_diagnosis diagnosis_id="9001" patient_id="90001" encounter_id="9001"
+             diagnosis_coded="91030" certainty="CONFIRMED" dx_rank="1"
+             creator="1" date_created="2025-05-20 00:00:00.0" voided="0"
+             uuid="90001dia-0001-0001-0001-000000090001"/>
+
+  <!-- Condition (patient-scoped) -->
+  <conditions condition_id="9001" patient_id="90001" condition_coded="91040"
+             clinical_status="ACTIVE" onset_date="2023-02-01 00:00:00.0" voided="0"
+             creator="1" date_created="2025-01-01 00:00:00.0"
+             uuid="90001cnd-0001-0001-0001-000000090001"/>
+
+  <!-- Allergy (patient-scoped) -->
+  <allergy allergy_id="9001" patient_id="90001" allergen_type="DRUG"
+           coded_allergen="91050" severity_concept_id="91051" voided="0"
+           creator="1" date_created="2025-01-01 00:00:00.0"
+           uuid="90001alg-0001-0001-0001-000000090001"/>
+  <allergy_reaction allergy_reaction_id="9001" allergy_id="9001" reaction_concept_id="91052"
+           uuid="90001alr-0001-0001-0001-000000090001"/>
+
+  <!-- Active drug order (patient-scoped) -->
+  <order_frequency order_frequency_id="9001" concept_id="91063" creator="1"
+                   date_created="2025-01-01 00:00:00.0" retired="false"
+                   uuid="90001ofr-0001-0001-0001-000000090001"/>
+
+  <drug drug_id="9001" concept_id="91060" name="Lisinopril" combination="false"
+        creator="1" date_created="2025-01-01 00:00:00.0" retired="false"
+        uuid="90001drg-0001-0001-0001-000000090001"/>
+
+  <orders order_id="9001" order_type_id="1" order_number="VS-ORD-9001" urgency="ROUTINE"
+          order_action="NEW" concept_id="91060" orderer="1"
+          date_activated="2025-05-20 09:15:00.0" creator="1"
+          date_created="2025-05-20 00:00:00.0" voided="false" patient_id="90001"
+          care_setting="1" encounter_id="9001"
+          uuid="90001ord-0001-0001-0001-000000090001"/>
+  <drug_order order_id="9001" drug_inventory_id="9001" dose="5.0" dose_units="91061"
+              as_needed="false" frequency="9001"
+              dosing_type="org.openmrs.SimpleDosingInstructions" route="91062"
+              duration="10" duration_units="91064" dispense_as_written="0"/>
+
+  <!-- ══ Visit 9002 — empty visit: no location, no encounters, no clinical data ══ -->
+
+  <visit visit_id="9002" patient_id="90002" visit_type_id="2"
+         date_started="2025-05-21 08:00:00.0"
+         creator="1" date_created="2025-05-21 00:00:00.0" voided="0"
+         uuid="90002vst-0002-0002-0002-000000090002"/>
+
+</dataset>

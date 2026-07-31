@@ -9,6 +9,12 @@
  */
 package org.openmrs.module.patientdocuments.common;
 
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerFactory;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.openmrs.util.OpenmrsClassLoader;
@@ -22,6 +28,54 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class Helper {
+
+	private static final String DISALLOW_DOCTYPE = "http://apache.org/xml/features/disallow-doctype-decl";
+
+	/**
+	 * The XSLT processor every PDF pipeline in this module must use.
+	 * <p>
+	 * Both stylesheet and source document are parsed by this factory, and both carry
+	 * data the server does not fully control: the stylesheet is chosen by a global
+	 * property, and the source document is built from clinical data. A default
+	 * {@code TransformerFactory} resolves external DTDs, honours {@code xsl:import} and
+	 * {@code xsl:include} over any protocol, and evaluates {@code document()} — which
+	 * turns "pick a stylesheet" into arbitrary local file read and outbound HTTP from
+	 * the application server.
+	 * <p>
+	 * The two JAXP 1.5 access attributes are set to the empty string, which permits no
+	 * protocol at all; secure processing is a second belt for processors that treat the
+	 * attributes as advisory.
+	 */
+	public static TransformerFactory newSecureTransformerFactory() {
+		TransformerFactory factory = TransformerFactory.newInstance();
+		try {
+			factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+		}
+		catch (TransformerConfigurationException e) {
+			throw new IllegalStateException(
+			        "XSLT processor does not support secure processing: " + factory.getClass().getName(), e);
+		}
+		factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+		factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+		return factory;
+	}
+
+	/**
+	 * A {@link DocumentBuilderFactory} that refuses documents carrying a DTD.
+	 * <p>
+	 * The renderers only ever call {@code newDocument()} on the builders they get from
+	 * here, so nothing they do today parses anything. That is precisely why this exists:
+	 * the next person to add a {@code parse()} call should inherit a builder that cannot
+	 * be made to fetch an entity, rather than one that can.
+	 */
+	public static DocumentBuilderFactory newSecureDocumentBuilderFactory() throws ParserConfigurationException {
+		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+		factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+		factory.setFeature(DISALLOW_DOCTYPE, true);
+		factory.setXIncludeAware(false);
+		factory.setExpandEntityReferences(false);
+		return factory;
+	}
 
 	public static InputStream getInputStreamByResource(String resourceName) {
 		try {

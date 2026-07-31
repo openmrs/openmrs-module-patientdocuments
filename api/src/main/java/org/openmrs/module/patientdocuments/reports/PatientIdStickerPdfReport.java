@@ -29,6 +29,7 @@ import org.apache.fop.apps.MimeConstants;
 import org.openmrs.Patient;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.initializer.api.InitializerService;
+import org.openmrs.module.patientdocuments.common.Helper;
 import org.openmrs.module.patientdocuments.common.PatientDocumentsConstants;
 import org.openmrs.module.patientdocuments.common.PatientDocumentsPrivilegeConstants;
 import org.openmrs.module.patientdocuments.library.PatientIdStickerDataSetDefinition;
@@ -151,7 +152,7 @@ public class PatientIdStickerPdfReport {
 			FopFactory fopFactory = new FopFactoryBuilder(fontBaseUri).setConfiguration(cfg).build();
 			FOUserAgent foUserAgent = fopFactory.newFOUserAgent();
 			Fop fop = fopFactory.newFop(MimeConstants.MIME_PDF, foUserAgent, outStream);
-			TransformerFactory factory = TransformerFactory.newInstance();
+			TransformerFactory factory = Helper.newSecureTransformerFactory();
 			Transformer transformer = factory.newTransformer(xslSource);
 			transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
 			transformer.setOutputProperty(OutputKeys.METHOD, "xml");

@@ -14,6 +14,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -24,6 +27,7 @@ import java.util.Map;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openmrs.GlobalProperty;
@@ -41,6 +45,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 /**
  * Controller and end-to-end tests for the visit summary PDF endpoint.
@@ -72,6 +79,8 @@ public class VisitSummaryPdfExportControllerTest extends BaseModuleWebContextSen
 	private static final String[] TOGGLEABLE_SECTION_KEYS = { "vitals", "diagnoses", "labResults", "conditions",
 	        "allergies", "medications", "visitNotes" };
 
+	private static final String ENDPOINT = "/rest/v1/patientdocuments/visitSummary";
+
 	@Autowired
 	private VisitSummaryPdfExportController controller;
 
@@ -97,6 +106,18 @@ public class VisitSummaryPdfExportControllerTest extends BaseModuleWebContextSen
 		saveGlobalProperty(VITALS_CONCEPTS_GP, "CIEL:5085,CIEL:5086,CIEL:5087");
 	}
 
+	/**
+	 * The same cache that lets an earlier test class leak into this one lets this one leak
+	 * out, so put the section toggles back rather than relying on every other class to
+	 * re-assert them in its own setUp.
+	 */
+	@AfterEach
+	public void restoreSectionToggles() {
+		for (String sectionKey : TOGGLEABLE_SECTION_KEYS) {
+			saveGlobalProperty(SECTION_GP_PREFIX + sectionKey + ".enabled", "true");
+		}
+	}
+
 	private void saveGlobalProperty(String property, String value) {
 		Context.getAdministrationService().saveGlobalProperty(new GlobalProperty(property, value));
 	}
@@ -105,11 +126,20 @@ public class VisitSummaryPdfExportControllerTest extends BaseModuleWebContextSen
 	 * Extracts the PDF's text, collapsing whitespace and undoing the typographic
 	 * ligatures the bundled IBM Plex font applies (so "Confirmed" is matchable).
 	 * <p>
-	 * Digits are NOT reliably recoverable from this text: FOP substitutes glyphs for the
-	 * bundled Arabic-capable font and maps the substituted digit glyphs into the Unicode
-	 * private use area, so extractors drop them even though the digits render correctly
-	 * on the page. Numeric values are therefore asserted on the rendered document instead
-	 * — see {@link #visitSummaryPipeline_shouldCarryNumericValuesThroughToTheRenderedDocument()}.
+	 * Digits are NOT recoverable from this text whenever they sit in a token that carries
+	 * no letter. FOP resolves the script of such a token to Arabic (the bundled IBM Plex
+	 * Sans Arabic declares both {@code latn} and {@code arab}), applies the font's
+	 * {@code locl} feature, and swaps in the {@code zero.loclARAB}…{@code nine.loclARAB}
+	 * alternates. Those alternates have no cmap entry, so the subsetter cannot reverse-map
+	 * them and writes U+E000… into the ToUnicode CMap: "Plot 5 Bugerere Road" extracts as
+	 * "Plot  Bugerere Road", while "VS-90001" survives intact because the token
+	 * contains letters. The digits themselves render correctly on the page.
+	 * <p>
+	 * So numeric values are asserted two ways instead: on the rendered document, which is
+	 * upstream of FOP — see
+	 * {@link #visitSummaryPipeline_shouldCarryNumericValuesThroughToTheRenderedDocument()}
+	 * — and on the page with the digit glyphs masked, see
+	 * {@link #getVisitSummary_shouldDrawEveryNumericValueOnThePage()}.
 	 */
 	private String extractPdfText(byte[] pdfBytes) throws IOException {
 		try (PDDocument document = PDDocument.load(pdfBytes)) {
@@ -121,12 +151,40 @@ public class VisitSummaryPdfExportControllerTest extends BaseModuleWebContextSen
 		}
 	}
 
+	/**
+	 * Replaces every private-use codepoint with {@code #}, so an assertion can still pin
+	 * how many digits reached the page and where they sit, even though the digits
+	 * themselves are not recoverable. See {@link #extractPdfText(byte[])}.
+	 */
+	private String maskUnextractableDigits(String pdfText) {
+		return pdfText.replaceAll("[\\uE000-\\uF8FF]", "#");
+	}
+
 	private void assertContains(String haystack, String expected) {
 		assertTrue("Expected to find: " + expected, haystack.contains(expected));
 	}
 
 	private void assertDoesNotContain(String haystack, String unexpected, String because) {
 		assertFalse(because, haystack.contains(unexpected));
+	}
+
+	/**
+	 * A 400 has to be writable, not just resolvable: the deployed
+	 * ExceptionHandlerExceptionResolver has a narrower converter set than the handler
+	 * adapter, and a body it cannot write turns the 400 straight back into a 500.
+	 */
+	private void assertRestErrorBody(MvcResult result) throws Exception {
+		String body = result.getResponse().getContentAsString();
+		assertTrue("Expected the standard REST error shape, got: " + body, body.contains("\"error\""));
+	}
+
+	/**
+	 * Standalone MockMvc over the real controller bean: enough of the dispatcher to run
+	 * @RequestParam binding and the controller's own @ExceptionHandler, without standing
+	 * up the whole servlet context.
+	 */
+	private MockMvc mockMvc() {
+		return MockMvcBuilders.standaloneSetup(controller).build();
 	}
 
 	private byte[] generatePdfFor(String visitUuid) {
@@ -189,9 +247,9 @@ public class VisitSummaryPdfExportControllerTest extends BaseModuleWebContextSen
 		// proving the 403 above comes from the privilege check and not from the fixture.
 		assertTrue(Context.hasPrivilege(PatientDocumentsPrivilegeConstants.VIEW_VISIT_SUMMARY));
 
-		ResponseEntity<byte[]> response = controller.getVisitSummary(POPULATED_VISIT_UUID, true);
-
-		assertEquals(HttpStatus.OK, response.getStatusCode());
+		// generatePdfFor asserts 200 plus a real %PDF- body, so this cannot pass on an
+		// empty 200 either.
+		generatePdfFor(POPULATED_VISIT_UUID);
 	}
 
 	// ── Unknown visit ─────────────────────────────────────────────────────────
@@ -207,7 +265,7 @@ public class VisitSummaryPdfExportControllerTest extends BaseModuleWebContextSen
 	// ── Response headers ──────────────────────────────────────────────────────
 
 	@Test
-	public void getVisitSummary_shouldSetInlinePdfHeadersByDefault() {
+	public void getVisitSummary_shouldSetInlinePdfHeadersWhenInlineIsTrue() {
 		ResponseEntity<byte[]> response = controller.getVisitSummary(POPULATED_VISIT_UUID, true);
 
 		assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -228,6 +286,32 @@ public class VisitSummaryPdfExportControllerTest extends BaseModuleWebContextSen
 		assertEquals("attachment; filename=\"visitSummary.pdf\"", headers.getFirst("Content-Disposition"));
 	}
 
+	// ── Request binding ───────────────────────────────────────────────────────
+	//
+	// The tests above call the handler method directly, so they never exercise Spring's
+	// @RequestParam binding — the "inline" default and the failure modes of a malformed
+	// query string only exist at that layer. These drive the real mapping instead.
+
+	@Test
+	public void getVisitSummary_shouldDefaultToInlineWhenTheParameterIsOmitted() throws Exception {
+		mockMvc().perform(get(ENDPOINT).param("visitUuid", POPULATED_VISIT_UUID))
+		        .andExpect(status().isOk())
+		        .andExpect(header().string("Content-Type", "application/pdf"))
+		        .andExpect(header().string("Content-Disposition", "inline; filename=\"visitSummary.pdf\""));
+	}
+
+	@Test
+	public void getVisitSummary_shouldReturnBadRequestWhenVisitUuidIsMissing() throws Exception {
+		assertRestErrorBody(mockMvc().perform(get(ENDPOINT)).andExpect(status().isBadRequest()).andReturn());
+	}
+
+	@Test
+	public void getVisitSummary_shouldReturnBadRequestWhenInlineIsNotABoolean() throws Exception {
+		assertRestErrorBody(mockMvc()
+		        .perform(get(ENDPOINT).param("visitUuid", POPULATED_VISIT_UUID).param("inline", "notABoolean"))
+		        .andExpect(status().isBadRequest()).andReturn());
+	}
+
 	// ── End to end: visit data through to PDF bytes ───────────────────────────
 
 	@Test
@@ -239,7 +323,8 @@ public class VisitSummaryPdfExportControllerTest extends BaseModuleWebContextSen
 
 		assertContains(pdfText, "Patient Information");
 		assertContains(pdfText, "Patient Name Mercy Aine Nakato");
-		assertContains(pdfText, "Patient ID");
+		// The identifier survives extraction because it carries letters; see extractPdfText.
+		assertContains(pdfText, "Patient ID VS-90001");
 		assertContains(pdfText, "Date of Birth");
 		assertContains(pdfText, "Gender F");
 		assertContains(pdfText, "Visit Type Initial HIV Clinic Visit");
@@ -312,6 +397,28 @@ public class VisitSummaryPdfExportControllerTest extends BaseModuleWebContextSen
 		}
 	}
 
+	/**
+	 * The XML-level numeric test below proves the values leave the renderer; this proves
+	 * they land on the page. Each unextractable digit glyph is masked to {@code #}, so the
+	 * assertions still pin how many digits are drawn and where — a vital that silently
+	 * lost a value, or a "128/84" that arrived as "128/", would change the shape and fail.
+	 */
+	@Test
+	public void getVisitSummary_shouldDrawEveryNumericValueOnThePage() throws Exception {
+		String masked = maskUnextractableDigits(extractPdfText(generatePdfFor(POPULATED_VISIT_UUID)));
+
+		assertContains(masked, "Plot # Bugerere Road, Kayunga, Central, Uganda, #####");
+		assertContains(masked, "Date of Birth ####-##-##");
+		assertContains(masked, "Visit Date ####-##-##");
+		assertContains(masked, "Blood Pressure ###/## mmHg");
+		assertContains(masked, "Heart Rate ## bpm");
+		assertContains(masked, "Malaria Confirmed #");
+		assertContains(masked, "Type # Diabetes Mellitus ####-##-##");
+		assertContains(masked, "Serum Glucose #.# mmol/L # – # mmol/L High");
+		assertContains(masked, "Lisinopril # mg, Oral, Twice daily ## days ####-##-##");
+		assertContains(masked, "####-##-## ##:## — Hippocrates of Cos");
+	}
+
 	@Test
 	public void visitSummaryPipeline_shouldCarryNumericValuesThroughToTheRenderedDocument() throws Exception {
 		String document = renderVisitSummaryDocument(POPULATED_VISIT_UUID);
@@ -380,6 +487,7 @@ public class VisitSummaryPdfExportControllerTest extends BaseModuleWebContextSen
 
 		String pdfText = extractPdfText(generatePdfFor(POPULATED_VISIT_UUID));
 
+		assertDoesNotContain(pdfText, "Allergies", "Disabled allergies heading must not render");
 		assertDoesNotContain(pdfText, "Penicillin", "Disabled allergies section must not render");
 		assertDoesNotContain(pdfText, "Active Medications", "Disabled medications heading must not render");
 		assertDoesNotContain(pdfText, "Lisinopril", "Disabled medications section must not render");

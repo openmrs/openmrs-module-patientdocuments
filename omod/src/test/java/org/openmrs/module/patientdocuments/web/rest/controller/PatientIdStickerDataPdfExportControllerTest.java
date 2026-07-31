@@ -1,10 +1,12 @@
 package org.openmrs.module.patientdocuments.web.rest.controller;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -14,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.initializer.api.InitializerService;
 import org.openmrs.module.patientdocuments.common.PatientDocumentsConstants;
+import org.openmrs.module.patientdocuments.common.PatientDocumentsPrivilegeConstants;
 import org.openmrs.module.patientdocuments.reports.PatientIdStickerReportManager;
 import org.openmrs.module.reporting.report.manager.ReportManagerUtil;
 import org.openmrs.web.test.jupiter.BaseModuleWebContextSensitiveTest;
@@ -38,6 +41,9 @@ public class PatientIdStickerDataPdfExportControllerTest extends BaseModuleWebCo
 	private PatientIdStickerReportManager reportManager;
 	
 	private static final String TEST_PATIENT_UUID = "5e81906d-84d2-45ed-84da-912109977026";
+
+	/** Stock non-superuser from standardTestDataset; the dataset grants it "Get Patients" only. */
+	private static final String UNPRIVILEGED_USERNAME = "butch";
 	
 	@BeforeEach
 	public void setup() throws Exception {
@@ -111,6 +117,35 @@ public class PatientIdStickerDataPdfExportControllerTest extends BaseModuleWebCo
 		}
 	}
 	
+	/**
+	 * The sibling of the visit summary 403 case. PatientIdStickerPdfReport denies via
+	 * Context.requirePrivilege, which throws ContextAuthenticationException — that extends
+	 * APIException, not APIAuthenticationException — so before the controller learned to
+	 * catch it, a privilege denial came back as 500.
+	 */
+	@Test
+	public void getPatientIdSticker_shouldReturnForbiddenWhenUserLacksStickerPrivilege() {
+		MockHttpServletResponse response = new MockHttpServletResponse();
+
+		// A real, non-superuser account holding "Get Patients" (so the patient lookup
+		// succeeds) but not "App: Can generate a Patient Identity Sticker".
+		Context.becomeUser(UNPRIVILEGED_USERNAME);
+		try {
+			assertFalse("Fixture is wrong: the user must NOT hold the sticker privilege",
+			    Context.hasPrivilege(PatientDocumentsPrivilegeConstants.VIEW_PATIENT_ID_STICKER));
+
+			ResponseEntity<byte[]> result = patientStickerController.getPatientIdSticker(response, TEST_PATIENT_UUID,
+			    false);
+
+			assertEquals(HttpStatus.FORBIDDEN, result.getStatusCode());
+			assertNotNull(result.getBody());
+			assertEquals("Access denied", new String(result.getBody(), StandardCharsets.UTF_8));
+		}
+		finally {
+			authenticate();
+		}
+	}
+
 	@Test
 	public void getPatientIdSticker_shouldReturn404ForInvalidPatient() throws Exception {
 		MockHttpServletResponse response = new MockHttpServletResponse();

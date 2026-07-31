@@ -18,13 +18,11 @@ import java.util.Comparator;
 import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
@@ -32,6 +30,7 @@ import javax.xml.transform.stream.StreamResult;
 import org.openmrs.Visit;
 import org.openmrs.annotation.Handler;
 import org.openmrs.module.patientdocuments.api.section.VisitSummarySection;
+import org.openmrs.module.patientdocuments.common.Helper;
 import org.openmrs.util.ConfigUtil;
 import org.openmrs.module.reporting.common.Localized;
 import org.openmrs.module.reporting.dataset.DataSet;
@@ -77,10 +76,9 @@ public class VisitSummaryXmlReportRenderer extends ReportDesignRenderer {
 
 	@Override
 	public void render(ReportData results, String argument, OutputStream out) throws IOException, RenderingException {
-		DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
 		DocumentBuilder docBuilder;
 		try {
-			docBuilder = docFactory.newDocumentBuilder();
+			docBuilder = Helper.newSecureDocumentBuilderFactory().newDocumentBuilder();
 		}
 		catch (ParserConfigurationException e) {
 			throw new RenderingException(e.getLocalizedMessage(), e);
@@ -127,7 +125,7 @@ public class VisitSummaryXmlReportRenderer extends ReportDesignRenderer {
 	private void writeToOutputStream(Document doc, OutputStream out) throws RenderingException {
 		Transformer transformer;
 		try {
-			transformer = TransformerFactory.newInstance().newTransformer();
+			transformer = Helper.newSecureTransformerFactory().newTransformer();
 		}
 		catch (TransformerConfigurationException | TransformerFactoryConfigurationError e) {
 			throw new RenderingException(e.getLocalizedMessage(), new Throwable(e));

@@ -14,7 +14,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -94,20 +96,35 @@ public class VisitNotesSection extends TypedSection<List<VisitNoteEntry>> {
 		    null, null, null, null, false
 		);
 
+		// Provider attribution is a property of the encounter, not of the individual
+		// note, and one encounter commonly carries many notes. Resolving it per obs
+		// re-walked the provider collections and — for the ordinary case of an
+		// encounter with no recorded provider — re-emitted the same WARN once per
+		// note. On a 2000-note visit that logging was ~85% of the whole render
+		// (10.1-11.0s, against 1.5-1.8s with the warning suppressed). The cache is a
+		// local, so nothing is shared between concurrent renders.
+		Map<String, String> providersByEncounter = new HashMap<>();
 		for (Obs obs : obsList) {
-			notes.add(buildEntry(obs, clinicianRole));
+			notes.add(buildEntry(obs, clinicianRole, providersByEncounter));
 		}
 		return notes;
 	}
 
-	private VisitNoteEntry buildEntry(Obs obs, EncounterRole clinicianRole) {
+	private VisitNoteEntry buildEntry(Obs obs, EncounterRole clinicianRole,
+	        Map<String, String> providersByEncounter) {
 		String text = obs.getValueText();
 		if (StringUtils.isBlank(text)) {
 			log.warn("Visit note obs {} has no recorded text; rendering placeholder", obs.getUuid());
 			text = "—";
 		}
 		Encounter encounter = obs.getEncounter();
-		return new VisitNoteEntry(text, resolveProvider(encounter, clinicianRole),
+		// Keyed by uuid rather than by the entity, so this never depends on how
+		// Encounter (or a Hibernate proxy standing in for one) implements equals/hashCode.
+		String key = encounter.getUuid();
+		if (!providersByEncounter.containsKey(key)) {
+			providersByEncounter.put(key, resolveProvider(encounter, clinicianRole));
+		}
+		return new VisitNoteEntry(text, providersByEncounter.get(key),
 		    formatDateTime(encounter.getEncounterDatetime(), obs));
 	}
 

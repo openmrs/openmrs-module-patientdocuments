@@ -39,6 +39,7 @@ import org.apache.fop.configuration.DefaultConfigurationBuilder;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.patientdocuments.api.PdfGenerationException;
 import org.openmrs.util.ConfigUtil;
+import org.openmrs.module.patientdocuments.common.Helper;
 import org.openmrs.module.patientdocuments.common.PatientDocumentsConstants;
 import org.openmrs.module.patientdocuments.common.PatientDocumentsPrivilegeConstants;
 import org.openmrs.module.patientdocuments.library.VisitSummaryDataSetDefinition;
@@ -155,7 +156,7 @@ public class VisitSummaryPdfReport {
 			FopFactory fopFactory = new FopFactoryBuilder(fontBaseUri).setConfiguration(cfg).build();
 			FOUserAgent foUserAgent = fopFactory.newFOUserAgent();
 			Fop fop = fopFactory.newFop(MimeConstants.MIME_PDF, foUserAgent, outStream);
-			TransformerFactory factory = TransformerFactory.newInstance();
+			TransformerFactory factory = Helper.newSecureTransformerFactory();
 			Transformer transformer = factory.newTransformer(xslSource);
 			transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
 			transformer.setOutputProperty(OutputKeys.METHOD, "xml");

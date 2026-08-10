@@ -15,3 +15,4 @@ It bundles two groups of reports:
 ## List of Embedded Reports:
 ### General use reports (always activated)
 * [Patient Identifier Sticker](readme/PatientIdSticker.md) - an easy-to-read report for generating printable patient ID stickers, rendered as a PDF using the [Patient ID Sticker XSLT Template](readme/PatientIdStickerXSL.md)
+  * [Remote Logo URL Support](readme/RemoteLogoUrl.md) - documentation for fetching logos from HTTP/HTTPS URLs with caching and validation

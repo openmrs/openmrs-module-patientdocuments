@@ -9,25 +9,8 @@
  */
 package org.openmrs.module.patientdocuments.renderer;
 
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.StringReader;
-import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 
-import javax.xml.transform.Result;
-import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.sax.SAXResult;
-import javax.xml.transform.stream.StreamSource;
-
-import org.apache.fop.apps.Fop;
-import org.apache.fop.apps.FopFactory;
-import org.apache.fop.apps.MimeConstants;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.text.PDFTextStripper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -51,12 +34,6 @@ import org.junit.jupiter.api.Test;
  * patient info have no column-header row to repeat, so the header cases skip them.
  */
 public class VisitSummaryStylesheetTableHeaderTest {
-
-	private static final String STYLESHEET = "/visitSummaryFopStylesheet.xsl";
-
-	private static final String FOP_CONFIG = "conf/fop.xconf.xml";
-
-	private static final String FONT_BASE = "fonts/";
 
 	/** Rows per section: comfortably more than one A4 page so the table must break. */
 	private static final int ROWS = 90;
@@ -190,57 +167,17 @@ public class VisitSummaryStylesheetTableHeaderTest {
 	}
 
 	/**
-	 * Renders the XML to a PDF and returns the text of each page, whitespace
-	 * normalized so assertions do not depend on how the extractor spaces a line.
-	 * Fails unless the document genuinely spans more than one page.
+	 * Renders through the shared harness, failing unless the document spans more than one
+	 * page: a single-page render makes every "repeats on each page" assertion vacuous.
 	 */
 	private List<String> renderPageTexts(String xml) throws Exception {
-		byte[] pdf = renderToPdf(xml);
-		try (PDDocument document = PDDocument.load(pdf)) {
-			int pageCount = document.getNumberOfPages();
-			Assertions.assertTrue(pageCount > 1,
-			    "test data must force a page break, but the content fit on one page");
-
-			List<String> pages = new ArrayList<>();
-			for (int page = 1; page <= pageCount; page++) {
-				PDFTextStripper stripper = new PDFTextStripper();
-				stripper.setStartPage(page);
-				stripper.setEndPage(page);
-				pages.add(stripper.getText(document).replaceAll("\\s+", " "));
-			}
-			return pages;
-		}
+		List<String> pages = VisitSummaryStylesheetHarness.renderPageTexts(xml);
+		Assertions.assertTrue(pages.size() > 1,
+		    "test data must force a page break, but the content fit on one page");
+		return pages;
 	}
 
 	private static String visitSummaryXml(String sections) {
-		return "<visitSummary page-height=\"297mm\" page-width=\"210mm\" lbl-no-data=\"LBL-no-data\">"
-		        + sections + "</visitSummary>";
-	}
-
-	/**
-	 * Renders the given visit summary XML through the bundled stylesheet and FOP
-	 * configuration, exactly as the production renderer does — the same classpath
-	 * stylesheet, FOP config and font base.
-	 */
-	private byte[] renderToPdf(String xml) throws Exception {
-		URL fontBase = getClass().getClassLoader().getResource(FONT_BASE);
-		Assertions.assertNotNull(fontBase, "bundled font directory must be on the classpath");
-
-		try (InputStream fopConfig = getClass().getClassLoader().getResourceAsStream(FOP_CONFIG);
-		        InputStream stylesheet = getClass().getResourceAsStream(STYLESHEET)) {
-			Assertions.assertNotNull(fopConfig, "bundled FOP configuration must be on the classpath");
-			Assertions.assertNotNull(stylesheet, "bundled stylesheet must be on the classpath");
-
-			FopFactory fopFactory = FopFactory.newInstance(fontBase.toURI(), fopConfig);
-			ByteArrayOutputStream out = new ByteArrayOutputStream();
-			Fop fop = fopFactory.newFop(MimeConstants.MIME_PDF, out);
-
-			Transformer transformer = TransformerFactory.newInstance()
-			        .newTransformer(new StreamSource(stylesheet));
-			Source source = new StreamSource(new StringReader(xml));
-			Result result = new SAXResult(fop.getDefaultHandler());
-			transformer.transform(source, result);
-			return out.toByteArray();
-		}
+		return VisitSummaryStylesheetHarness.visitSummaryXml(sections);
 	}
 }

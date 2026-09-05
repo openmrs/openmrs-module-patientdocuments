@@ -28,6 +28,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.sax.SAXResult;
 import javax.xml.transform.stream.StreamSource;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.fop.apps.FOUserAgent;
 import org.apache.fop.apps.Fop;
 import org.apache.fop.apps.FopFactory;
@@ -74,13 +75,23 @@ public class VisitSummaryPdfReport {
 	@Autowired
 	private VisitSummaryXmlReportRenderer renderer;
 
+	/** Renders at the configured page size, with no per-request override. */
 	public byte[] generatePdf(String visitUuid)  {
+		return generatePdf(visitUuid, null, null);
+	}
+
+	/**
+	 * @param pageWidth  overrides {@code report.visitSummary.size.width} for this render only;
+	 *                   null or blank keeps the configured default
+	 * @param pageHeight the same for {@code report.visitSummary.size.height}
+	 */
+	public byte[] generatePdf(String visitUuid, String pageWidth, String pageHeight)  {
 		Context.requirePrivilege(PatientDocumentsPrivilegeConstants.VIEW_VISIT_SUMMARY);
 
 		// Visit existence is validated by the controller (404) and the evaluator
 		// (returns empty DataSet). No redundant fetch here.
 		try {
-			ReportData reportData = createReportData(visitUuid);
+			ReportData reportData = createReportData(visitUuid, pageWidth, pageHeight);
 			byte[] xmlBytes = renderReportToXml(reportData);
 			return transformXmlToPdf(xmlBytes);
 		}
@@ -116,9 +127,11 @@ public class VisitSummaryPdfReport {
 		}
 	}
 
-	private ReportData createReportData(String visitUuid)  {
+	private ReportData createReportData(String visitUuid, String pageWidth, String pageHeight)  {
 		EvaluationContext context = new EvaluationContext();
 		context.addParameterValue("visitUuid", visitUuid);
+		addIfPresent(context, PatientDocumentsConstants.VISIT_SUMMARY_PAGE_WIDTH_PARAMETER, pageWidth);
+		addIfPresent(context, PatientDocumentsConstants.VISIT_SUMMARY_PAGE_HEIGHT_PARAMETER, pageHeight);
 
 		VisitSummaryDataSetDefinition dsd = new VisitSummaryDataSetDefinition();
 		DataSet dataSet = evaluator.evaluate(dsd, context);
@@ -127,8 +140,18 @@ public class VisitSummaryPdfReport {
 		Map<String, DataSet> dataSets = new HashMap<>();
 		dataSets.put(VisitSummaryReportManager.DATASET_KEY_VISIT_SUMMARY_FIELDS, dataSet);
 		reportData.setDataSets(dataSets);
+		// The renderer reads the page-size overrides back off this context; without it the
+		// render sees no request at all and falls back to the global properties.
+		reportData.setContext(context);
 
 		return reportData;
+	}
+
+	/** Leaves the parameter unset rather than carrying a blank the renderer would ignore anyway. */
+	private void addIfPresent(EvaluationContext context, String parameterName, String value) {
+		if (StringUtils.isNotBlank(value)) {
+			context.addParameterValue(parameterName, value);
+		}
 	}
 
 	private byte[] renderReportToXml(ReportData reportData) throws IOException {

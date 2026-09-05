@@ -73,6 +73,31 @@ public class HelperTest extends BaseModuleContextSensitiveTest {
 		return target;
 	}
 
+	/** The real default logo, so the test reads the bytes a deployment would. */
+	private static final String DEFAULT_LOGO = "patientdocuments/openmrs-logo.png";
+
+	@Test
+	public void getClasspathImageAsDataUri_shouldEncodeTheBundledDefaultLogo() {
+		String uri = Helper.getClasspathImageAsDataUri(DEFAULT_LOGO);
+
+		Assertions.assertNotNull(uri, "a PNG on the classpath must resolve to a data URI");
+		Assertions.assertTrue(uri.startsWith("data:image/png;base64,"),
+		    "media type must be read from the signature bytes: " + uri);
+	}
+
+	/** A deployment whose bundled asset is missing must lose the logo, not the document. */
+	@Test
+	public void getClasspathImageAsDataUri_shouldReturnNullWhenResourceAbsent() {
+		Assertions.assertNull(Helper.getClasspathImageAsDataUri("patientdocuments/absent-logo.png"));
+	}
+
+	@Test
+	public void getClasspathImageAsDataUri_shouldReturnNullForBlankInput() {
+		Assertions.assertNull(Helper.getClasspathImageAsDataUri(null));
+		Assertions.assertNull(Helper.getClasspathImageAsDataUri(""));
+		Assertions.assertNull(Helper.getClasspathImageAsDataUri("   "));
+	}
+
 	@Test
 	public void getImageAsDataUri_shouldEncodePngWithPngMediaType() throws Exception {
 		writeToAppDataDir("printing/logo.png", PNG_BYTES);

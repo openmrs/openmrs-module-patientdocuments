@@ -120,6 +120,40 @@ public class Helper {
 		}
 	}
 
+	/**
+	 * Loads a bundled image as a base64 data URI. Reads a module resource rather than a
+	 * deployment-supplied file, so unlike {@link #getImageAsDataUri(String)} there is no path
+	 * to sanitise; still returns null rather than throwing, so a missing asset costs the
+	 * image and not the document.
+	 *
+	 * @param classpathLocation resource path resolved by the OpenMRS class loader
+	 * @return the data URI, or {@code null} when unusable
+	 */
+	public static String getClasspathImageAsDataUri(String classpathLocation) {
+		if (StringUtils.isBlank(classpathLocation)) {
+			return null;
+		}
+		try (InputStream image = OpenmrsClassLoader.getInstance().getResourceAsStream(classpathLocation)) {
+			if (image == null) {
+				log.warn("Bundled image '{}' is not on the classpath; ignoring it", classpathLocation);
+				return null;
+			}
+			byte[] imageBytes = IOUtils.toByteArray(image);
+			if (imageBytes.length == 0) {
+				return null;
+			}
+			String mediaType = detectImageMediaType(imageBytes);
+			if (mediaType == null) {
+				log.warn("Bundled image '{}' is not a PNG, JPEG or GIF; ignoring it", classpathLocation);
+				return null;
+			}
+			return "data:" + mediaType + ";base64," + Base64.getEncoder().encodeToString(imageBytes);
+		} catch (IOException e) {
+			log.warn("Bundled image '{}' could not be read; ignoring it", classpathLocation, e);
+			return null;
+		}
+	}
+
 	/** Identifies a raster image from its leading signature bytes, or null if unsupported. */
 	private static String detectImageMediaType(byte[] bytes) {
 		if (startsWith(bytes, PNG_SIGNATURE)) {

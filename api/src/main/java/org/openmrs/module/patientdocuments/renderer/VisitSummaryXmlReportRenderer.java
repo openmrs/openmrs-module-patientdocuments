@@ -30,6 +30,7 @@ import javax.xml.transform.stream.StreamResult;
 
 import lombok.extern.slf4j.Slf4j;
 
+import org.apache.commons.lang3.StringUtils;
 import org.openmrs.Visit;
 import org.openmrs.annotation.Handler;
 import org.openmrs.api.context.Context;
@@ -40,6 +41,7 @@ import org.openmrs.util.ConfigUtil;
 import org.openmrs.module.reporting.common.Localized;
 import org.openmrs.module.reporting.dataset.DataSet;
 import org.openmrs.module.reporting.dataset.DataSetRow;
+import org.openmrs.module.reporting.evaluation.EvaluationContext;
 import org.openmrs.module.reporting.report.ReportData;
 import org.openmrs.module.reporting.report.ReportRequest;
 import org.openmrs.module.reporting.report.renderer.RenderingException;
@@ -97,7 +99,10 @@ public class VisitSummaryXmlReportRenderer extends ReportDesignRenderer {
 	@Override
 	public void render(ReportData results, String argument, OutputStream out) throws IOException, RenderingException {
 		Document doc = newDocument();
-		Element root = newRoot(doc);
+		// The evaluation context carries any per-request page-size override. Evaluating a report
+		// definition always attaches one, so this is null only for a ReportData assembled by
+		// hand that never set a context; the global properties decide there.
+		Element root = newRoot(doc, results.getContext());
 
 		if (results.getDataSets().containsKey(DATASET_KEY_VISIT_SUMMARY_FIELDS)) {
 			DataSet dataSet = results.getDataSets().get(DATASET_KEY_VISIT_SUMMARY_FIELDS);
@@ -119,7 +124,7 @@ public class VisitSummaryXmlReportRenderer extends ReportDesignRenderer {
 	 */
 	public void renderSample(OutputStream out) throws RenderingException {
 		Document doc = newDocument();
-		Element root = newRoot(doc);
+		Element root = newRoot(doc, null);
 
 		// Leads the document so nobody mistakes a preview for a patient record. Reuses the
 		// existing section-notice element rather than adding a preview-only visual.
@@ -230,11 +235,15 @@ public class VisitSummaryXmlReportRenderer extends ReportDesignRenderer {
 	/**
 	 * Builds the shared document shell. Both render() and renderSample() go through here,
 	 * so the preview gets the same page dimensions and empty-state label as the real PDF.
+	 * <p>
+	 * The context carries a per-request page-size override where there is one. The preview
+	 * passes null: it is rendered from the settings page, not from an export request, so it
+	 * shows the configured default paper.
 	 */
-	private Element newRoot(Document doc) {
+	private Element newRoot(Document doc, EvaluationContext context) {
 		Element root = doc.createElement("visitSummary");
 		doc.appendChild(root);
-		configurePageDimensions(root);
+		configurePageDimensions(root, context);
 		configureNoDataLabel(root);
 		return root;
 	}
@@ -257,11 +266,72 @@ public class VisitSummaryXmlReportRenderer extends ReportDesignRenderer {
 		root.setAttribute("lbl-no-data", label);
 	}
 
-	private void configurePageDimensions(Element root) {
-		String pageHeight = ConfigUtil.getProperty("report.visitSummary.size.height", "297mm");
-		String pageWidth = ConfigUtil.getProperty("report.visitSummary.size.width", "210mm");
-		root.setAttribute("page-height", pageHeight);
-		root.setAttribute("page-width", pageWidth);
+	/**
+	 * Publishes the page frame as root attributes for the stylesheet to interpolate. It reads
+	 * six of the seven; {@code content-width-mm} it does not, and that one ships as the raw
+	 * measurement behind the banded {@code layout-profile} so a consumer that needs the number
+	 * rather than the band does not have to re-derive it.
+	 * <p>
+	 * Measured in Java because XSLT 1.0 cannot do unit arithmetic. Emitting the normalised
+	 * value rather than the raw configuration also keeps an unparseable page size from
+	 * reaching FOP as a page dimension.
+	 * <p>
+	 * Each dimension takes the request override if this render was asked for one, and the
+	 * global property otherwise, so a request naming only one dimension keeps the configured
+	 * default for the other. A null context has no override to read and leaves both dimensions
+	 * to the global properties; that is the preview and any other hand-assembled ReportData,
+	 * not the report-design path, where evaluating the definition supplies a context.
+	 * <p>
+	 * The override is read off that context by parameter name, so a report definition declaring
+	 * a {@code pageWidth} or {@code pageHeight} parameter would decide the paper size on the
+	 * evaluated path. No report definition declares those parameters today:
+	 * {@code VisitSummaryReportManager} declares only {@code visitUuid}.
+	 */
+	private void configurePageDimensions(Element root, EvaluationContext context) {
+		ConfiguredDimension width = ConfiguredDimension.resolve(context,
+				PatientDocumentsConstants.VISIT_SUMMARY_PAGE_WIDTH_PARAMETER,
+				PatientDocumentsConstants.VISIT_SUMMARY_PAGE_WIDTH_PROPERTY);
+		ConfiguredDimension height = ConfiguredDimension.resolve(context,
+				PatientDocumentsConstants.VISIT_SUMMARY_PAGE_HEIGHT_PARAMETER,
+				PatientDocumentsConstants.VISIT_SUMMARY_PAGE_HEIGHT_PROPERTY);
+
+		VisitSummaryPageLayout layout = VisitSummaryPageLayout.from(width.value, height.value, width.source,
+				height.source);
+
+		root.setAttribute("page-height", layout.getPageHeightAttribute());
+		root.setAttribute("page-width", layout.getPageWidthAttribute());
+		root.setAttribute("side-margin", layout.getSideMarginAttribute());
+		root.setAttribute("logo-column-width", layout.getLogoColumnAttribute());
+		root.setAttribute("logo-graphic-width", layout.getLogoGraphicAttribute());
+		root.setAttribute("content-width-mm", VisitSummaryPageLayout.formatMm(layout.getContentWidthMm()));
+		root.setAttribute("layout-profile", layout.getLayoutProfile());
+	}
+
+	/**
+	 * A raw page dimension paired with the knob it came from. It only picks which of the two
+	 * knobs to read; the value stays raw so that {@link VisitSummaryPageLayout#from} remains
+	 * the only place a page dimension is parsed or validated.
+	 */
+	private static final class ConfiguredDimension {
+
+		private final String value;
+
+		private final String source;
+
+		private ConfiguredDimension(String value, String source) {
+			this.value = value;
+			this.source = source;
+		}
+
+		static ConfiguredDimension resolve(EvaluationContext context, String parameterName, String globalPropertyKey) {
+			Object requested = context == null ? null : context.getParameterValue(parameterName);
+			if (requested != null && StringUtils.isNotBlank(requested.toString())) {
+				return new ConfiguredDimension(requested.toString(),
+						VisitSummaryPageLayout.requestParameterSource(parameterName));
+			}
+			return new ConfiguredDimension(ConfigUtil.getProperty(globalPropertyKey),
+					VisitSummaryPageLayout.globalPropertySource(globalPropertyKey));
+		}
 	}
 
 	private void writeToOutputStream(Document doc, OutputStream out) throws RenderingException {

@@ -9,11 +9,16 @@
  */
 package org.openmrs.module.patientdocuments.renderer;
 
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openmrs.Patient;
 import org.openmrs.module.patientdocuments.reports.PatientIdStickerPdfReport;
+import org.openmrs.module.patientdocuments.service.RemoteLogoService;
 import org.openmrs.test.jupiter.BaseModuleContextSensitiveTest;
 import org.openmrs.util.OpenmrsUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,4 +80,26 @@ public class PatientIdStickerXmlReportRendererTest extends BaseModuleContextSens
 		Assertions.assertNull(resolvedLogoFile, "Absolute paths must be rejected");
 		Files.deleteIfExists(outsideLogo);
 	}
+	
+	@Test
+	public void isRemoteUrl_shouldDetectHttpUrls() throws Exception {
+		PatientIdStickerXmlReportRenderer renderer = new PatientIdStickerXmlReportRenderer();
+		
+		// Use reflection to test private method
+		java.lang.reflect.Method method = PatientIdStickerXmlReportRenderer.class
+			.getDeclaredMethod("isRemoteUrl", String.class);
+		method.setAccessible(true);
+		
+		Assertions.assertTrue((Boolean) method.invoke(renderer, "http://example.com/logo.png"));
+		Assertions.assertTrue((Boolean) method.invoke(renderer, "https://example.com/logo.png"));
+		Assertions.assertTrue((Boolean) method.invoke(renderer, "HTTP://EXAMPLE.COM/LOGO.PNG"));
+		Assertions.assertTrue((Boolean) method.invoke(renderer, "HTTPS://EXAMPLE.COM/LOGO.PNG"));
+		
+		Assertions.assertFalse((Boolean) method.invoke(renderer, "ftp://example.com/logo.png"));
+		Assertions.assertFalse((Boolean) method.invoke(renderer, "logos/local-logo.png"));
+		Assertions.assertFalse((Boolean) method.invoke(renderer, "/absolute/path/logo.png"));
+		Assertions.assertFalse((Boolean) method.invoke(renderer, (String) null));
+		Assertions.assertFalse((Boolean) method.invoke(renderer, ""));
+	}
 }
+

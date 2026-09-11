@@ -58,8 +58,28 @@
 	</privilege>
 	<!-- /Required Privileges -->
 
+	<!-- Global Properties -->
+	<globalProperty>
+		<property>report.visitSummary.size.width</property>
+		<defaultValue>210mm</defaultValue>
+		<description>Paper width for the visit summary PDF. Accepts mm, cm, in or pt (a bare number is read as mm), for example 210mm, 21cm, 8.5in. Defaults to A4 portrait. Page margins and the facility logo scale with this value. An unreadable value falls back to 210mm. A single export can override this default with the pageWidth request parameter.</description>
+	</globalProperty>
+
+	<globalProperty>
+		<property>report.visitSummary.size.height</property>
+		<defaultValue>297mm</defaultValue>
+		<description>Paper height for the visit summary PDF. Accepts mm, cm, in or pt (a bare number is read as mm), for example 297mm, 29.7cm, 11in. Defaults to A4 portrait. An unreadable value falls back to 297mm. A single export can override this default with the pageHeight request parameter.</description>
+	</globalProperty>
+	<globalProperty>
+		<property>report.visitSummary.logourl</property>
+		<defaultValue></defaultValue>
+		<description>Facility logo for the visit summary header: an image path (PNG, JPEG or GIF) relative to the OpenMRS application data directory, for example printing/logo.png. Paths escaping that directory are rejected. Left empty, the bundled OpenMRS logo is used. A path that is set but unreadable renders no logo at all, rather than substituting the OpenMRS one for the facility's.</description>
+	</globalProperty>
+
+	<!-- /Global Properties -->
+
 	<!-- Conditional Resources -->
-	
+
 	<!-- /Conditional Resources -->
 
 </module>

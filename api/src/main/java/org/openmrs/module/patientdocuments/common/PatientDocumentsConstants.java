@@ -56,6 +56,20 @@ public class PatientDocumentsConstants {
 
 	public static final String VISIT_SUMMARY_SECTION_PREFIX = "report.visitSummary.section.";
 
+	public static final String VISIT_SUMMARY_PAGE_WIDTH_PROPERTY = "report.visitSummary.size.width";
+
+	public static final String VISIT_SUMMARY_PAGE_HEIGHT_PROPERTY = "report.visitSummary.size.height";
+
+	/**
+	 * Per-request overrides for the two page-size global properties above, named on the export
+	 * endpoint and carried to the renderer as evaluation context parameters. Each accepts the
+	 * same lengths as the property it overrides; absent or blank, that dimension keeps the
+	 * configured default.
+	 */
+	public static final String VISIT_SUMMARY_PAGE_WIDTH_PARAMETER = "pageWidth";
+
+	public static final String VISIT_SUMMARY_PAGE_HEIGHT_PARAMETER = "pageHeight";
+
 	public static final String NO_DATA_RECORDED_PLACEHOLDER = "No data recorded";
 
 	public static final String MISSING_VALUE_PLACEHOLDER = "-";

@@ -9,19 +9,11 @@
  */
 package org.openmrs.module.patientdocuments.renderer;
 
-import java.io.InputStream;
-import java.io.StringReader;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.stream.StreamSource;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -33,24 +25,19 @@ import org.junit.jupiter.api.Test;
  */
 public class VisitSummaryStylesheetOrderTest {
 
-	private static final String STYLESHEET = "/visitSummaryFopStylesheet.xsl";
-
 	private String transform(String xml) throws Exception {
-		try (InputStream stylesheet = getClass().getResourceAsStream(STYLESHEET)) {
-			Assertions.assertNotNull(stylesheet, "classpath stylesheet must be readable");
-			Transformer transformer = TransformerFactory.newInstance().newTransformer(new StreamSource(stylesheet));
-			StringWriter out = new StringWriter();
-			transformer.transform(new StreamSource(new StringReader(xml)), new StreamResult(out));
-			return out.toString();
-		}
+		return VisitSummaryStylesheetHarness.renderToFo(xml);
 	}
 
 	/** Marker standing in for the localized no-data label the renderer sets on the root. */
 	private static final String NO_DATA_LABEL = "LBL-no-data";
 
+	/**
+	 * Routed through the shared harness so the document carries the renderer's derived frame
+	 * attributes; hand-written roots omit them and render with empty margins and logo widths.
+	 */
 	private static String visitSummaryXml(String sections) {
-		return "<visitSummary page-height=\"297mm\" page-width=\"210mm\" lbl-no-data=\"" + NO_DATA_LABEL + "\">"
-		        + sections + "</visitSummary>";
+		return VisitSummaryStylesheetHarness.visitSummaryXml(sections);
 	}
 
 	private static List<String> headingOrder(String foOutput) {

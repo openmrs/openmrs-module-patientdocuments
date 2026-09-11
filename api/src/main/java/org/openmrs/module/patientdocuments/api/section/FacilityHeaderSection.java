@@ -42,6 +42,12 @@ public class FacilityHeaderSection extends TypedSection<FacilityInfo> {
 
 	private static final String LOGO_PATH_PROPERTY = "report.visitSummary.logourl";
 
+	/**
+	 * Shown until a deployment configures {@link #LOGO_PATH_PROPERTY}. An api resource, not an
+	 * omod one, so it resolves the same way under test as at runtime.
+	 */
+	private static final String DEFAULT_LOGO_CLASSPATH = "patientdocuments/openmrs-logo.png";
+
 	private static final String PHONE_ATTRIBUTE_TYPE_PROPERTY = "report.visitSummary.facility.phoneAttributeType";
 
 	@Override
@@ -118,17 +124,15 @@ public class FacilityHeaderSection extends TypedSection<FacilityInfo> {
 	}
 
 	/**
-	 * Loads the configured facility logo as a base64 data URI, using the same
-	 * mechanism as the patient ID sticker logo: report.visitSummary.logourl
-	 * holds a PNG path relative to the application data directory, resolved
-	 * with path-traversal protection by {@link Helper#getImageAsDataUri(String)}.
-	 * Returns "" when unconfigured or unreadable so the header renders without
-	 * a logo instead of failing the PDF.
+	 * Loads the facility logo as a base64 data URI. report.visitSummary.logourl holds a path
+	 * relative to the application data directory; unset, the bundled OpenMRS logo stands in.
+	 * A configured path that cannot be read deliberately does not fall back — substituting
+	 * OpenMRS branding for the facility's own would hide the misconfiguration.
 	 */
 	private String loadLogo() {
 		String logoPath = ConfigUtil.getProperty(LOGO_PATH_PROPERTY);
 		if (StringUtils.isBlank(logoPath)) {
-			return "";
+			return StringUtils.defaultString(Helper.getClasspathImageAsDataUri(DEFAULT_LOGO_CLASSPATH));
 		}
 		String dataUri = Helper.getImageAsDataUri(logoPath.trim());
 		if (dataUri == null) {

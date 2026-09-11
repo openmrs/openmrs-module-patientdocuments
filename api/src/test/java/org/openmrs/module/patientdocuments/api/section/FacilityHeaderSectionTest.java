@@ -9,6 +9,7 @@
  */
 package org.openmrs.module.patientdocuments.api.section;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -143,11 +144,14 @@ public class FacilityHeaderSectionTest extends BaseModuleContextSensitiveTest {
 		Assertions.assertEquals("", info.getFacilityPhone());
 	}
 
+	/** A deployment that has configured nothing still gets the bundled OpenMRS logo. */
 	@Test
-	public void gatherData_shouldReturnEmptyLogoWhenPropertyUnset() {
+	public void gatherData_shouldFallBackToTheBundledOpenmrsLogoWhenPropertyUnset() {
 		FacilityInfo info = section.gatherData(visitWithPhoneAttribute(null));
 
-		Assertions.assertEquals("", info.getLogoData());
+		Assertions.assertTrue(info.getLogoData().startsWith("data:image/png;base64,"),
+		    "unset property must fall back to the bundled OpenMRS logo, got: "
+		            + StringUtils.abbreviate(info.getLogoData(), 60));
 	}
 
 	@Test
@@ -157,7 +161,10 @@ public class FacilityHeaderSectionTest extends BaseModuleContextSensitiveTest {
 
 		FacilityInfo info = section.gatherData(visitWithPhoneAttribute(null));
 
-		// An unreadable logo must degrade to no logo, never fail the whole PDF.
-		Assertions.assertEquals("", info.getLogoData());
+		// An unreadable logo must degrade to no logo, never fail the whole PDF — and never
+		// to the bundled default, which would hide the misconfiguration behind OpenMRS
+		// branding. Empty rather than a data: URI is what distinguishes the two.
+		Assertions.assertEquals("", info.getLogoData(),
+		    "an unreadable configured logo must yield no logo, not the bundled default");
 	}
 }

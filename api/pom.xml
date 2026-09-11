@@ -177,8 +177,10 @@
 			<resource>
 				<directory>src/main/resources</directory>
 				<filtering>false</filtering>
+				<!-- Binaries: filtering would corrupt them, so they are copied verbatim. -->
 				<includes>
                     <include>**/*.ttf</include>
+                    <include>**/*.png</include>
                 </includes>
 			</resource>
 		</resources>

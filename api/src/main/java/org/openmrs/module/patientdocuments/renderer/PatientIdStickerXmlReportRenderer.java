@@ -42,6 +42,7 @@ import org.openmrs.api.context.Context;
 import org.openmrs.messagesource.MessageSourceService;
 import org.openmrs.module.initializer.api.InitializerService;
 import org.openmrs.module.patientdocuments.common.PatientDocumentsConstants;
+import org.openmrs.module.patientdocuments.service.RemoteLogoService;
 import org.openmrs.module.reporting.common.Localized;
 import org.openmrs.module.reporting.dataset.DataSet;
 import org.openmrs.module.reporting.dataset.DataSetColumn;
@@ -78,6 +79,8 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 	
 	private InitializerService initializerService;
 	
+	private RemoteLogoService remoteLogoService;
+	
 	private MessageSourceService getMessageSourceService() {
 		
 		if (mss == null) {
@@ -94,6 +97,15 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 		}
 		
 		return initializerService;
+	}
+	
+	private RemoteLogoService getRemoteLogoService() {
+		
+		if (remoteLogoService == null) {
+			remoteLogoService = Context.getRegisteredComponent("remoteLogoService", RemoteLogoService.class);
+		}
+		
+		return remoteLogoService;
 	}
 	
 	/**
@@ -253,18 +265,38 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 	/**
 	 * Configures the logo for the sticker document.
 	 * 
-	 * Loads a custom logo from {@code logoUrlPath} (relative to the {@code OPENMRS_APPLICATION_DATA_DIRECTORY}.
-	 * If not found, falls back to the OpenMRS logo from the classpath.
+	 * Supports both remote HTTP/HTTPS URLs and local file paths.
+	 * For remote URLs: Downloads, validates, and caches the logo with fallback support.
+	 * For local paths: Loads from {@code OPENMRS_APPLICATION_DATA_DIRECTORY} (relative paths only).
+	 * If neither is available, falls back to the default OpenMRS logo from the classpath.
 	 * 
 	 * @param doc The XML document
 	 * @param header The header element to append the logo to
-	 * @param logoUrlPath User-configured logo path (must be relative to app data dir)
+	 * @param logoUrlPath User-configured logo URL or path
 	 */
 	private void configureLogo(Document doc, Element header, String logoUrlPath) {
 		String logoContent = null;
 
-		// 1. Try custom logo
-		if (isNotBlank(logoUrlPath)) {
+		// 1. Try remote HTTP/HTTPS URL
+		if (isNotBlank(logoUrlPath) && isRemoteUrl(logoUrlPath)) {
+			File remoteLogo = getRemoteLogoService().fetchRemoteLogo(logoUrlPath);
+			if (remoteLogo != null && remoteLogo.exists() && remoteLogo.canRead() && remoteLogo.isFile()) {
+				try {
+					byte[] remoteLogoBytes = OpenmrsUtil.getFileAsBytes(remoteLogo);
+					if (remoteLogoBytes != null && remoteLogoBytes.length > 0) {
+						String base64Image = Base64.getEncoder().encodeToString(remoteLogoBytes);
+						logoContent = "data:image/png;base64," + base64Image;
+						log.info("Successfully loaded remote logo from URL: {}", logoUrlPath);
+					}
+				} catch (IOException e) {
+					log.error("Failed to read remote logo file: {}", remoteLogo.getAbsolutePath(), e);
+				}
+			} else {
+				log.warn("Failed to fetch remote logo from URL: {}", logoUrlPath);
+			}
+		}
+		// 2. Try local file path (relative to app data directory)
+		else if (isNotBlank(logoUrlPath)) {
 			File logoFile = resolveSecureLogoPath(logoUrlPath);
 			if (logoFile != null && logoFile.exists() && logoFile.canRead() && logoFile.isFile()) {
 				try {
@@ -272,6 +304,7 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 					if (customLogoBytes != null && customLogoBytes.length > 0) {
 						String base64Image = Base64.getEncoder().encodeToString(customLogoBytes);
 						logoContent = "data:image/png;base64," + base64Image;
+						log.info("Successfully loaded local logo from path: {}", logoUrlPath);
 					}
 				} catch (IOException e) {
 					log.error("Failed to load custom logo from file: {}", logoFile.getAbsolutePath(), e);
@@ -279,11 +312,13 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 			}
 		}
 
+		// 3. Fallback to default logo from classpath
 		if (isBlank(logoContent)) {
 			byte[] defaultLogoBytes = loadDefaultLogoFromClasspath();
 			if (defaultLogoBytes != null && defaultLogoBytes.length > 0) {
 				String base64Image = Base64.getEncoder().encodeToString(defaultLogoBytes);
 				logoContent = "data:image/png;base64," + base64Image;
+				log.debug("Using default logo from classpath");
 			}
 		}
 
@@ -298,6 +333,17 @@ public class PatientIdStickerXmlReportRenderer extends ReportDesignRenderer {
 			// If a path was provided but we could not resolve or fall back, surface an error
 			log.error("Failed to configure logo: unresolved path '{}' and no default provided", logoUrlPath);
 		}
+	}
+	
+	/**
+	 * Checks if the given string is a remote HTTP/HTTPS URL.
+	 */
+	private boolean isRemoteUrl(String urlOrPath) {
+		if (isBlank(urlOrPath)) {
+			return false;
+		}
+		String lower = urlOrPath.trim().toLowerCase();
+		return lower.startsWith("http://") || lower.startsWith("https://");
 	}
 
 	private byte[] loadDefaultLogoFromClasspath() {

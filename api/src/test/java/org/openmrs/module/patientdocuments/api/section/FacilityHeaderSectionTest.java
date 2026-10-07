@@ -43,10 +43,7 @@ public class FacilityHeaderSectionTest extends BaseModuleContextSensitiveTest {
 		// test's rolled-back transaction, so an override left by a prior test could leak
 		// in. Reset both keys this class reads to their blank (unset) baseline first,
 		// while the session is still clean — matching the reset-in-setUp convention used
-		// by the other section tests (e.g. VisitNotesSectionTest, VitalsSectionTest). It
-		// runs here rather than in an @AfterEach because these tests dirty the session
-		// with a transient LocationAttribute, and a post-test query would force a flush
-		// that fails on it.
+		// by the other section tests (e.g. VisitNotesSectionTest, VitalsSectionTest).
 		Context.getAdministrationService().saveGlobalProperty(new GlobalProperty(PHONE_PROPERTY, ""));
 		Context.getAdministrationService().saveGlobalProperty(new GlobalProperty(LOGO_PROPERTY, ""));
 
@@ -71,6 +68,9 @@ public class FacilityHeaderSectionTest extends BaseModuleContextSensitiveTest {
 			attribute.setAttributeType(phoneType);
 			attribute.setValue(phoneValue);
 			location.addAttribute(attribute);
+			// Save it so the attribute gets its value reference: Hibernate 7 cascades the
+			// unsaved attribute into the auto-flush before the section's global-property query
+			location = Context.getLocationService().saveLocation(location);
 		}
 
 		Visit visit = new Visit();

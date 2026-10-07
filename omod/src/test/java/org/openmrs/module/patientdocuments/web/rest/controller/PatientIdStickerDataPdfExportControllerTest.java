@@ -1,9 +1,9 @@
 package org.openmrs.module.patientdocuments.web.rest.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
 import java.util.Locale;
@@ -84,7 +84,7 @@ public class PatientIdStickerDataPdfExportControllerTest extends BaseModuleWebCo
 		        "Bilbo Odilon Kipkorir Baggins", "M" };
 		
 		for (String phrase : expectedPhrases) {
-			assertTrue("PDF should contain: " + phrase, cleanedText.contains(phrase));
+			assertTrue(cleanedText.contains(phrase), "PDF should contain: " + phrase);
 		}
 	}
 	
@@ -107,7 +107,7 @@ public class PatientIdStickerDataPdfExportControllerTest extends BaseModuleWebCo
 		String[] expectedPhrases = { "معرف المريض", "الاسم الأول", "الجنس", "تاريخ الميلاد", "العمر", "Bilbo Odilon Kipkorir Baggins", "M" };
 		
 		for (String phrase : expectedPhrases) {
-			assertTrue("PDF should contain: " + phrase, cleanedText.contains(phrase));
+			assertTrue(cleanedText.contains(phrase), "PDF should contain: " + phrase);
 		}
 	}
 	
@@ -119,7 +119,7 @@ public class PatientIdStickerDataPdfExportControllerTest extends BaseModuleWebCo
 		
 		ResponseEntity<byte[]> responseEntity = patientStickerController.getPatientIdSticker(response, invalidUuid, false);
 		
-		assertNull("Response entity should be null", responseEntity);
-		assertEquals("Should return HTTP 404 status", HttpStatus.NOT_FOUND.value(), response.getStatus());
+		assertNull(responseEntity, "Response entity should be null");
+		assertEquals(HttpStatus.NOT_FOUND.value(), response.getStatus(), "Should return HTTP 404 status");
 	}
 }

@@ -9,9 +9,9 @@
  */
 package org.openmrs.module.patientdocuments.web.rest.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashSet;
 import java.util.List;
@@ -56,9 +56,9 @@ public class VisitSummarySectionsControllerTest extends BaseModuleWebContextSens
 		ResponseEntity<Object> response = controller.getSections();
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertNotNull(response.getBody());
-		assertTrue("Body must be a SimpleObject wrapper", response.getBody() instanceof SimpleObject);
+		assertTrue(response.getBody() instanceof SimpleObject, "Body must be a SimpleObject wrapper");
 		Object results = ((SimpleObject) response.getBody()).get("results");
-		assertNotNull("Body must contain a results array", results);
+		assertNotNull(results, "Body must contain a results array");
 		return (List<SimpleObject>) results;
 	}
 
@@ -101,7 +101,7 @@ public class VisitSummarySectionsControllerTest extends BaseModuleWebContextSens
 			assertNotNull(entry.get("toggleable"));
 
 			int order = (Integer) entry.get("order");
-			assertTrue("Sections must be sorted by order", order >= previousOrder);
+			assertTrue(order >= previousOrder, "Sections must be sorted by order");
 			previousOrder = order;
 		}
 	}
@@ -116,7 +116,7 @@ public class VisitSummarySectionsControllerTest extends BaseModuleWebContextSens
 
 		assertEquals(false, vitals.get("enabled"));
 		assertEquals(5, (int) (Integer) vitals.get("order"));
-		assertEquals("Overridden order must re-sort the list", "vitals", body.get(0).get("sectionKey"));
+		assertEquals("vitals", body.get(0).get("sectionKey"), "Overridden order must re-sort the list");
 	}
 
 	@Test
@@ -129,10 +129,10 @@ public class VisitSummarySectionsControllerTest extends BaseModuleWebContextSens
 		for (SimpleObject entry : getSectionsBody()) {
 			String key = (String) entry.get("sectionKey");
 			if (alwaysOnKeys.contains(key)) {
-				assertEquals("Section " + key + " must not be toggleable", false, entry.get("toggleable"));
-				assertEquals("Section " + key + " must be enabled", true, entry.get("enabled"));
+				assertEquals(false, entry.get("toggleable"), "Section " + key + " must not be toggleable");
+				assertEquals(true, entry.get("enabled"), "Section " + key + " must be enabled");
 			} else {
-				assertEquals("Section " + key + " must be toggleable", true, entry.get("toggleable"));
+				assertEquals(true, entry.get("toggleable"), "Section " + key + " must be toggleable");
 			}
 		}
 	}

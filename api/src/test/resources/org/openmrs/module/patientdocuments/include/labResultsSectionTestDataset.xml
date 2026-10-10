@@ -265,8 +265,8 @@
        obs_datetime="2025-03-01 09:00:00.0" value_numeric="8.0" interpretation="LOW"
        location_id="1" creator="1" date_created="2025-03-01 00:00:00.0"
        voided="false" uuid="00009102-0000-0000-0000-000000009102" status="FINAL"/>
-  <!-- obs_reference_range_id must equal obs_id: the reference-range row shares its primary key with the obs row -->
-  <obs_reference_range obs_reference_range_id="9102" obs_id="9102"
+  <!-- the reference-range row shares its primary key with the obs row (@MapsId), so obs_id is the only key column -->
+  <obs_reference_range obs_id="9102"
        low_normal="12.0" hi_normal="16.0"
        uuid="00009102-rr00-rr00-rr00-000000009102"/>
 

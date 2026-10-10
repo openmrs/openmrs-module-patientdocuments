@@ -9,9 +9,9 @@
  */
 package org.openmrs.module.patientdocuments.web.rest.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
@@ -49,10 +49,10 @@ public class VisitSummaryPreviewControllerTest extends BaseModuleWebContextSensi
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertNotNull(response.getBody());
 		assertEquals("application/pdf", response.getHeaders().getFirst("Content-Type"));
-		assertTrue("Response must be a PDF document",
-		        new String(response.getBody(), 0, 5, StandardCharsets.ISO_8859_1).startsWith("%PDF-"));
-		assertTrue("Response must carry an inline disposition",
-		        response.getHeaders().getFirst("Content-Disposition").startsWith("inline"));
+		assertTrue(new String(response.getBody(), 0, 5, StandardCharsets.ISO_8859_1).startsWith("%PDF-"),
+		        "Response must be a PDF document");
+		assertTrue(response.getHeaders().getFirst("Content-Disposition").startsWith("inline"),
+		        "Response must carry an inline disposition");
 	}
 
 	@Test
@@ -60,8 +60,8 @@ public class VisitSummaryPreviewControllerTest extends BaseModuleWebContextSensi
 		ResponseEntity<byte[]> response = controller.getVisitSummaryPreview(false);
 
 		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertTrue("Response must carry an attachment disposition",
-		        response.getHeaders().getFirst("Content-Disposition").startsWith("attachment"));
+		assertTrue(response.getHeaders().getFirst("Content-Disposition").startsWith("attachment"),
+		        "Response must carry an attachment disposition");
 	}
 
 	@Test

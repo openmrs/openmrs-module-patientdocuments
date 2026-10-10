@@ -12,7 +12,7 @@ package org.openmrs.module.patientdocuments.web.rest.controller;
 import static org.openmrs.module.patientdocuments.common.PatientDocumentsConstants.PATIENT_ID_STICKER_ID;
 import static org.openmrs.module.patientdocuments.common.PatientDocumentsConstants.MODULE_ARTIFACT_ID;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.openmrs.Patient;
 import org.openmrs.api.PatientService;

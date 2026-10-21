@@ -39,6 +39,8 @@ import java.util.List;
  *   Visit 203 — encounter with no diagnoses
  *   Visit 204 — no encounters
  *   Visit 205 — diagnosis with neither coded nor non-coded value (renders "Unknown")
+ *   Visit 206 — edited visit note: voided Malaria (rank=2), then Anemia (PROVISIONAL, rank=1)
+ *               and Malaria again (CONFIRMED, rank=2), newest last
  */
 public class DiagnosesSectionTest extends BaseModuleContextSensitiveTest {
 
@@ -112,6 +114,31 @@ public class DiagnosesSectionTest extends BaseModuleContextSensitiveTest {
 		Assertions.assertEquals(1, diagnoses.size());
 		Assertions.assertEquals("Unknown", diagnoses.get(0).getName(),
 		    "Unresolvable diagnosis name must degrade to the localized Unknown, not blank");
+	}
+
+	@Test
+	public void gatherData_editedVisitNote_leavesOutVoidedDiagnoses() {
+		// Visit 206's note was edited, which voided the first Malaria and saved it again
+		Visit visit = Context.getVisitService().getVisit(206);
+
+		List<DiagnosisEntry> diagnoses = section.gatherData(visit);
+
+		Assertions.assertEquals(2, diagnoses.size());
+		Assertions.assertEquals(1, diagnoses.stream().filter(d -> "Malaria".equals(d.getName())).count(),
+		    "The diagnosis voided by the edit must not appear alongside its replacement");
+	}
+
+	@Test
+	public void gatherData_listsPrimaryDiagnosisFirst() {
+		// Visit 206's newest diagnosis is the secondary Malaria; the primary Anemia must still come first
+		Visit visit = Context.getVisitService().getVisit(206);
+
+		List<DiagnosisEntry> diagnoses = section.gatherData(visit);
+
+		Assertions.assertEquals("Anemia", diagnoses.get(0).getName());
+		Assertions.assertEquals("1", diagnoses.get(0).getRank());
+		Assertions.assertEquals("Malaria", diagnoses.get(1).getName());
+		Assertions.assertEquals("2", diagnoses.get(1).getRank());
 	}
 
 	// ── renderXml tests ───────────────────────────────────────────────────────

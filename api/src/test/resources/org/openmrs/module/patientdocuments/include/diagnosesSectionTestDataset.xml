@@ -14,6 +14,8 @@
     Visit 203 — encounter with no diagnoses (empty-list test)
     Visit 204 — no encounters (empty-list test)
     Visit 205 — diagnosis with neither coded nor non-coded value (renders "Unknown")
+    Visit 206 — edited visit note: voided Malaria (dx_rank=2), then Anemia (PROVISIONAL, dx_rank=1)
+                and Malaria again (CONFIRMED, dx_rank=2), newest last
 -->
 <dataset>
 
@@ -109,5 +111,29 @@
              certainty="PROVISIONAL" dx_rank="1"
              creator="1" date_created="2025-01-01 00:00:00.0" voided="0"
              uuid="diag0205-0004-0004-0004-000000000205"/>
+
+  <!-- ── Visit 206: visit note edited after it was first saved ────────── -->
+
+  <visit visit_id="206" patient_id="2" visit_type_id="1"
+         date_started="2025-01-06 00:00:00.0"
+         creator="1" date_created="2025-01-01 00:00:00.0" voided="0"
+         uuid="00000206-0206-0206-0206-000000000206"/>
+  <encounter encounter_id="206" encounter_type="1" patient_id="2" location_id="1"
+             visit_id="206" encounter_datetime="2025-01-06 12:00:00.0"
+             creator="1" date_created="2025-01-06 08:00:00.0" voided="false"
+             uuid="00000206-enc6-enc6-enc6-000000000206"/>
+  <encounter_diagnosis diagnosis_id="205" patient_id="2" encounter_id="206"
+             diagnosis_coded="6001" certainty="CONFIRMED" dx_rank="2"
+             creator="1" date_created="2025-01-06 08:00:00.0" voided="1"
+             voided_by="1" date_voided="2025-01-06 09:00:00.0" void_reason="Replaced when the visit note was edited"
+             uuid="diag0206-0005-0005-0005-000000000206"/>
+  <encounter_diagnosis diagnosis_id="206" patient_id="2" encounter_id="206"
+             diagnosis_coded="6002" certainty="PROVISIONAL" dx_rank="1"
+             creator="1" date_created="2025-01-06 09:00:00.0" voided="0"
+             uuid="diag0206-0006-0006-0006-000000000206"/>
+  <encounter_diagnosis diagnosis_id="207" patient_id="2" encounter_id="206"
+             diagnosis_coded="6001" certainty="CONFIRMED" dx_rank="2"
+             creator="1" date_created="2025-01-06 09:00:01.0" voided="0"
+             uuid="diag0206-0007-0007-0007-000000000206"/>
 
 </dataset>

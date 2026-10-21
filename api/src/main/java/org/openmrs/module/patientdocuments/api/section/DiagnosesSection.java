@@ -10,6 +10,7 @@
 package org.openmrs.module.patientdocuments.api.section;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import lombok.extern.slf4j.Slf4j;
@@ -51,7 +52,16 @@ public class DiagnosesSection extends TypedSection<List<DiagnosisEntry>> {
 		if (diagnosisList == null) {
 			return diagnoses;
 		}
+		// getDiagnosesByVisit also returns voided diagnoses, such as the ones replaced when a visit note is edited
+		List<Diagnosis> activeDiagnoses = new ArrayList<>();
 		for (Diagnosis diagnosis : diagnosisList) {
+			if (!Boolean.TRUE.equals(diagnosis.getVoided())) {
+				activeDiagnoses.add(diagnosis);
+			}
+		}
+		// Primary (rank 1) first. The sort is stable, so each rank keeps the query's newest-first order.
+		activeDiagnoses.sort(Comparator.comparing(Diagnosis::getRank, Comparator.nullsLast(Comparator.naturalOrder())));
+		for (Diagnosis diagnosis : activeDiagnoses) {
 			String name = extractDiagnosisName(diagnosis);
 			String certainty = diagnosis.getCertainty() != null ? diagnosis.getCertainty().name() : "";
 			String rank = diagnosis.getRank() != null ? String.valueOf(diagnosis.getRank()) : "";
